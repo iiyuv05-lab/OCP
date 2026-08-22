@@ -1,0 +1,54 @@
+{
+  "schema": "ocp.capability-registry/v1",
+  "rule": "Connection existence != Capability availability != Execution verification",
+  "capabilities": [
+    {
+      "id": "github",
+      "connection": {
+        "state": "CONNECTED",
+        "account": "iiyuv05-lab",
+        "last_verified": "2026-08-23",
+        "evidence": "GitHub connector returned the authenticated profile and one accessible repository."
+      },
+      "targets": {
+        "accessible_repository_count": 1,
+        "canonical_candidate": "iiyuv05-lab/OCP",
+        "url": "https://github.com/iiyuv05-lab/OCP",
+        "permissions": [
+          "admin",
+          "maintain",
+          "pull",
+          "push",
+          "triage"
+        ]
+      },
+      "operations": {
+        "READ": {
+          "availability": "AVAILABLE",
+          "execution": "VERIFIED"
+        },
+        "WRITE": {
+          "availability": "AVAILABLE",
+          "execution": "NOT_RUN"
+        },
+        "CREATE_REPOSITORY": {
+          "availability": "UNAVAILABLE_IN_CONNECTOR",
+          "execution": "NOT_APPLICABLE"
+        },
+        "PULL_REQUEST": {
+          "availability": "AVAILABLE",
+          "execution": "NOT_RUN"
+        },
+        "ACTIONS": {
+          "availability": "AVAILABLE_AFTER_PUSH",
+          "execution": "NOT_RUN"
+        }
+      },
+      "canonical_source": {
+        "state": "REMOTE_IDENTIFIED_NOT_PUSHED",
+        "default_branch": "main",
+        "remote": "https://github.com/iiyuv05-lab/OCP.git"
+      }
+    }
+  ]
+}

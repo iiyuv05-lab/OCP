@@ -1,0 +1,86 @@
+[
+  {
+    "method": "GET",
+    "resourceType": "document",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "script",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/_next/static/chunks/layout-segment-context-RdGM578s.js",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "script",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "stylesheet",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/_next/static/css/index.CjDqTNaw.css",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "script",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/_next/static/chunks/framework-BgSIrAUN.js",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "script",
+    "status": 302,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/cdn-cgi/challenge-platform/scripts/jsd/main.js",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "script",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/cdn-cgi/challenge-platform/h/b/scripts/jsd/e694063b5082/main.js?",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "script",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/_next/static/chunks/page-Bwc6K92O.js",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "script",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/_next/static/chunks/index-yN3S39bt.js",
+    "failure": null
+  },
+  {
+    "method": "POST",
+    "resourceType": "xhr",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/cdn-cgi/challenge-platform/h/b/jsd/oneshot/e694063b5082/0.6465340277413513:1787385622:Z_rJ9U6fG0a5Ks2l0S_V5c04mb1dgDOE4oTxlUkg-7Q/a2f0aa7c0aca0bbb",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "fetch",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/api/workspace-members/me",
+    "failure": null
+  },
+  {
+    "method": "GET",
+    "resourceType": "fetch",
+    "status": 200,
+    "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/api/bootstrap",
+    "failure": null
+  }
+]

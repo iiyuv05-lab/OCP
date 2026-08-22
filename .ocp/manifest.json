@@ -1,0 +1,39 @@
+{
+  "schema": "ocp.harness-manifest/v1",
+  "baseline_id": "OCP-HARNESS-BASELINE-V1",
+  "name": "Harness Baseline v1",
+  "purpose": "Make implementation and runtime verification reproducible by an independent actor without GitHub or builder-session access.",
+  "contract": ".ocp/verification-contract.json",
+  "current_state": ".ocp/current-state.json",
+  "capability_registry": ".ocp/capability-registry.json",
+  "runtime_targets": ".ocp/runtime/targets.json",
+  "evidence_root": ".ocp/evidence/runs",
+  "human_documentation": "docs/OCP-HARNESS-BASELINE-V1.md",
+  "commands": {
+    "verify": "npm run verify",
+    "build": "npm run build",
+    "start": "npm run start:runtime",
+    "healthcheck": "npm run runtime:healthcheck",
+    "test": "npm test",
+    "browser_test": "npm run test:runtime:external"
+  },
+  "state_ladder": [
+    "DECLARED",
+    "IMPLEMENTED",
+    "BUILD_VERIFIED",
+    "DEPLOYABLE",
+    "DEPLOYED",
+    "ACCESSIBLE",
+    "INTERACTABLE",
+    "RUNTIME_VERIFIED",
+    "ACCEPTANCE_VERIFIED",
+    "OUTCOME_OBSERVED"
+  ],
+  "invariants": [
+    "Connection existence is not capability availability.",
+    "Capability availability is not execution verification.",
+    "Deployment is not runtime verification.",
+    "A failed request is never recorded as saved.",
+    "Generated evidence records source and dirty state."
+  ]
+}

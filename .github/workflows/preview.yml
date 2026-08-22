@@ -1,0 +1,44 @@
+name: Verify a declared preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime_url:
+        description: Exact preview URL produced by the deployment provider
+        required: true
+        type: string
+      deployment_id:
+        description: Provider deployment identifier
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OCP_RUNTIME_URL: ${{ inputs.runtime_url }}
+      OCP_RUNTIME_TARGET_ID: ${{ inputs.deployment_id }}
+      OCP_RUN_ID: PREVIEW-${{ github.run_id }}
+      OCP_EVIDENCE_RUN_DIR: .ocp/evidence/runs/PREVIEW-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Reject a missing runtime URL
+        run: test -n "$OCP_RUNTIME_URL"
+      - run: npm run test:runtime:external
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocp-preview-${{ github.run_id }}
+          path: .ocp/evidence/runs/PREVIEW-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 30

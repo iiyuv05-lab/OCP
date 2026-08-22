@@ -1,0 +1,59 @@
+{
+  "schema": "ocp.harness-current-state/v1",
+  "baseline_id": "OCP-HARNESS-BASELINE-V1",
+  "recorded_at": "2026-08-22T20:26:33.535Z",
+  "recorded_time_basis": "UTC",
+  "state_ladder": [
+    "DECLARED",
+    "IMPLEMENTED",
+    "BUILD_VERIFIED",
+    "DEPLOYABLE",
+    "DEPLOYED",
+    "ACCESSIBLE",
+    "INTERACTABLE",
+    "RUNTIME_VERIFIED",
+    "ACCEPTANCE_VERIFIED",
+    "OUTCOME_OBSERVED"
+  ],
+  "baseline": {
+    "latest_stage": "ACCEPTANCE_VERIFIED",
+    "result": "PASS_LOCAL_COMMITTED_SOURCE",
+    "latest_run_id": "RUN-20260823-001",
+    "source_commit": "9b687d2aa3f138c51155117862b1cf814adcf977",
+    "evidence_path": ".ocp/evidence/runs/RUN-20260823-001"
+  },
+  "features": [
+    {
+      "id": "main-llm",
+      "label": "Main LLM",
+      "implementation": "PARTIAL",
+      "latest_verified_stage": "DECLARED",
+      "runtime_verified": false,
+      "note": "The Work surface exists, but no assistant or context-loader adapter is connected."
+    },
+    {
+      "id": "map",
+      "label": "Map",
+      "implementation": "IMPLEMENTED",
+      "latest_verified_stage": "RUNTIME_VERIFIED",
+      "runtime_verified": true,
+      "note": "The local independent harness verifies the fixture-backed projection; this does not claim DB-backed Canonical Graph projection."
+    },
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "implementation": "NOT_IMPLEMENTED",
+      "latest_verified_stage": "DECLARED",
+      "runtime_verified": false,
+      "note": "Dashboard remains a product direction only."
+    },
+    {
+      "id": "github-pr-workflow",
+      "label": "GitHub PR workflow",
+      "implementation": "IMPLEMENTED",
+      "latest_verified_stage": "IMPLEMENTED",
+      "runtime_verified": false,
+      "note": "Workflow files exist locally; PR and Actions execution have not run yet."
+    }
+  ]
+}

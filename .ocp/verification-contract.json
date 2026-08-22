@@ -1,0 +1,113 @@
+{
+  "schema": "ocp.verification-contract/v1",
+  "contract_id": "OCP-VERIFY-001",
+  "baseline_id": "OCP-HARNESS-BASELINE-V1",
+  "version": "1.0.0",
+  "commands": {
+    "build": "npm run build",
+    "start": "npm run start:runtime",
+    "healthcheck": "npm run runtime:healthcheck",
+    "test": "npm test",
+    "browser_test": "npm run test:runtime:external",
+    "all": "npm run verify"
+  },
+  "runtime": {
+    "default_url": "http://127.0.0.1:4173",
+    "healthcheck_path": "/api/bootstrap",
+    "startup_timeout_ms": 120000,
+    "actor_class": "independent-browser-harness"
+  },
+  "required_routes": [
+    {
+      "path": "/",
+      "view": "work",
+      "expected_landmark": "어디에서 시작했든|Begin anywhere"
+    },
+    {
+      "path": "/map",
+      "view": "map",
+      "expected_landmark": "model map"
+    },
+    {
+      "path": "/feed",
+      "view": "feed",
+      "expected_landmark": "기준 그래프에서 무엇이 바뀌었나|What changed in the reference graph"
+    },
+    {
+      "path": "/standards",
+      "view": "standards",
+      "expected_landmark": "계약·구현 상태·운영 기준|Contracts, status, and operating rules"
+    }
+  ],
+  "required_viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "id": "tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "acceptance_checks": [
+    {
+      "id": "AC-ROUTES-001",
+      "requirement": "Every required route returns and exposes its declared landmark."
+    },
+    {
+      "id": "AC-INPUT-001",
+      "requirement": "The Work draft accepts local text and enables review without claiming persistence."
+    },
+    {
+      "id": "AC-NAV-001",
+      "requirement": "The primary navigation performs a visible route transition among Work, Map, Feed, and Standards."
+    },
+    {
+      "id": "AC-SCROLL-001",
+      "requirement": "The Standards surface remains operable after an explicit scroll action."
+    },
+    {
+      "id": "AC-RUNTIME-001",
+      "requirement": "The browser records zero console errors and zero failed or HTTP 4xx/5xx product requests."
+    },
+    {
+      "id": "AC-EVIDENCE-001",
+      "requirement": "Every run preserves actions, expected and observed outcomes, DOM, console, network, screenshots, result, environment, source state, and artifact hashes."
+    }
+  ],
+  "artifact_paths": {
+    "run_root": ".ocp/evidence/runs/<run_id>",
+    "manifest": "manifest.json",
+    "build_log": "build.log",
+    "playwright_report": "playwright-report/",
+    "screenshots": "screenshots/",
+    "dom": "dom/",
+    "console": "console.json",
+    "network": "network.json",
+    "verification": "verification.json"
+  },
+  "evidence_requirements": [
+    "run_id",
+    "git_commit",
+    "dirty_state",
+    "started_at",
+    "finished_at",
+    "runtime_url",
+    "browser",
+    "viewport",
+    "test_version",
+    "environment",
+    "actions",
+    "expected",
+    "observed",
+    "result",
+    "artifact_hashes"
+  ]
+}
