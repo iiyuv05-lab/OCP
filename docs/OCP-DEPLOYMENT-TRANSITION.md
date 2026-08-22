@@ -1,6 +1,6 @@
 # OCP deployment transition
 
-Status: GitHub repository identified and local origin connected · push, PR execution, and external preview not yet verified
+Status: GitHub repository and PR #1 established · local and GitHub harness execution verified · merge enforcement and external preview pending
 
 ## Frozen prototype
 
@@ -32,10 +32,12 @@ The current vinext application depends on Cloudflare-compatible D1 and R2 bindin
 
 ## External blockers
 
-1. Push `main` and this branch to `iiyuv05-lab/OCP`, then open the first pull request and observe Actions.
-2. Enable branch protection, required checks, and CODEOWNERS review separately; file presence is not enforcement.
+1. Review and merge [PR #1](https://github.com/iiyuv05-lab/OCP/pull/1) only after its current head check succeeds.
+2. Enable branch protection, required checks, and CODEOWNERS review separately; file presence and one passing PR are not enforcement.
 3. Select a preview provider compatible with the D1/R2 runtime and connect it to GitHub deployment events.
 4. Declare provider bindings and secrets outside Git; record only their requirements and locations.
 5. Run the external URL workflow and preserve its first passing evidence bundle before promoting production.
+
+The local checkout has no GitHub HTTPS credential, so ordinary `git push` was blocked. The connected GitHub capability wrote the exact tracked source tree through the Git Data API, created `codex/harness-baseline-v1`, opened PR #1, and executed Actions. This transport distinction does not reduce the repository's observed source or CI state, but it remains recorded for reproduction.
 
 Until these occur, the correct state is `external preview: blocked_missing_provider`, not deployed or verified.

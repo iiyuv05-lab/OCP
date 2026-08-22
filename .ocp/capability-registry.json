@@ -29,7 +29,8 @@
         },
         "WRITE": {
           "availability": "AVAILABLE",
-          "execution": "NOT_RUN"
+          "execution": "VERIFIED_VIA_CONNECTOR",
+          "note": "GitHub Git Data writes created the source tree and branch. Local HTTPS push remains unavailable because this checkout has no GitHub credential."
         },
         "CREATE_REPOSITORY": {
           "availability": "UNAVAILABLE_IN_CONNECTOR",
@@ -37,17 +38,26 @@
         },
         "PULL_REQUEST": {
           "availability": "AVAILABLE",
-          "execution": "NOT_RUN"
+          "execution": "VERIFIED",
+          "evidence": "https://github.com/iiyuv05-lab/OCP/pull/1"
         },
         "ACTIONS": {
-          "availability": "AVAILABLE_AFTER_PUSH",
-          "execution": "NOT_RUN"
+          "availability": "AVAILABLE",
+          "execution": "VERIFIED",
+          "workflow_run_id": 32598246321,
+          "result": "SUCCESS",
+          "artifact_id": 9482159491,
+          "artifact_name": "ocp-harness-32598246321",
+          "artifact_digest": "sha256:8a2562137edc132596634162b2239d9b45879a825a670a68239a88ee0407a376"
         }
       },
       "canonical_source": {
-        "state": "REMOTE_IDENTIFIED_NOT_PUSHED",
+        "state": "ESTABLISHED_PR_PENDING_MERGE",
         "default_branch": "main",
-        "remote": "https://github.com/iiyuv05-lab/OCP.git"
+        "remote": "https://github.com/iiyuv05-lab/OCP.git",
+        "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
+        "head_branch": "codex/harness-baseline-v1",
+        "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7"
       }
     }
   ]

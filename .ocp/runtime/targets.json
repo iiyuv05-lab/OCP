@@ -5,8 +5,11 @@
     "kind": "git",
     "repository": "https://github.com/iiyuv05-lab/OCP",
     "default_branch": "main",
-    "state": "remote_connected_unpushed",
-    "note": "The accessible GitHub repository and local origin are connected. No pushed commit, pull request, or workflow execution is claimed yet."
+    "state": "github_pr_ci_verified_pending_merge",
+    "note": "PR #1 exists and GitHub Actions run 32598246321 passed with artifact 9482159491. Main promotion and branch-rule enforcement remain unverified.",
+    "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
+    "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7",
+    "workflow_run_id": 32598246321
   },
   "targets": [
     {

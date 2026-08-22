@@ -23,7 +23,7 @@ export const referenceDocuments: ReferenceDocument[] = [
     id: "harness-baseline-v1",
     title: { en: "Harness Baseline v1", ko: "검증 하네스 기준선 v1" },
     path: "docs/OCP-HARNESS-BASELINE-V1.md · .ocp/manifest.json",
-    status: { en: "Local acceptance verified", ko: "로컬 인수 검증됨" },
+    status: { en: "Local + PR execution verified", ko: "로컬·PR 실행 검증됨" },
     summary: {
       en: "Defines the one-command local production line, feature state ladder, evidence bundle, and the GitHub capability boundary.",
       ko: "단일 명령 로컬 검증 공정, 기능별 상태 사다리, 증거 번들, GitHub 기능 경계를 정의합니다.",

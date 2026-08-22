@@ -146,7 +146,7 @@ test("registers the integrity harness and its first repository slice without cla
   assert.match(specification, /first repository\/runtime-test slice implemented/i);
   assert.match(specification, /Coverage percentages are prohibited/);
   assert.match(referenceIndex, /Approved module specification/);
-  assert.match(statusLedger, /Harness Baseline v1 locally acceptance-verified/);
+  assert.match(statusLedger, /Harness Baseline v1 local and PR execution verified/);
   assert.doesNotMatch(statusLedger, /Context Integrity & Runtime Verification Harness \| Implemented/);
 });
 
@@ -171,7 +171,7 @@ test("records deployment truth and runs independent-browser evidence through OCP
   assert.match(constraint, /BUILD_VERIFIED[\s\S]*DEPLOYABLE[\s\S]*DEPLOYED[\s\S]*ACCESSIBLE[\s\S]*INTERACTABLE[\s\S]*RUNTIME_VERIFIED[\s\S]*ACCEPTANCE_VERIFIED/);
   assert.match(constraint, /CASE-RUNTIME-001/);
   assert.equal(manifest.policy_id, "OCP-RC-002");
-  assert.equal(manifest.canonical_implementation.state, "remote_connected_unpushed");
+  assert.equal(manifest.canonical_implementation.state, "github_pr_ci_verified_pending_merge");
   assert.equal(manifest.targets.find((target) => target.id === "ocp-local-runtime").verification.runtime_verified, "verified_local_actor");
   assert.equal(manifest.targets.find((target) => target.id === "ocp-local-runtime").latest_harness_run.result, "PASS");
   assert.equal(manifest.targets.find((target) => target.id === "ocp-sites-v05-snapshot").lifecycle, "frozen");
@@ -195,7 +195,7 @@ test("records deployment truth and runs independent-browser evidence through OCP
   assert.match(deploymentWorkflow, /OCP_RUNTIME_URL/);
   assert.match(referenceIndex, /deploymentVerificationStages/);
   assert.match(referenceIndex, /environment-dependent/);
-  assert.match(statusLedger, /Runtime Observability Independence \| Harness Baseline v1 locally acceptance-verified/);
+  assert.match(statusLedger, /Runtime Observability Independence \| Harness Baseline v1 local and PR execution verified/);
   assert.doesNotMatch(statusLedger, /Runtime Observability Independence \| Implemented/);
 });
 
@@ -248,7 +248,8 @@ test("defines Harness Baseline v1 as a machine-readable and locally executable c
   assert.equal(currentState.baseline.latest_stage, "ACCEPTANCE_VERIFIED");
   assert.equal(currentState.baseline.latest_run_id, "RUN-20260823-001");
   assert.equal(capabilities.capabilities[0].targets.canonical_candidate, "iiyuv05-lab/OCP");
-  assert.equal(capabilities.capabilities[0].operations.PULL_REQUEST.execution, "NOT_RUN");
+  assert.equal(capabilities.capabilities[0].operations.PULL_REQUEST.execution, "VERIFIED");
+  assert.equal(capabilities.capabilities[0].operations.ACTIONS.execution, "VERIFIED");
   assert.match(verifier, /artifactHashes/);
   assert.match(verifier, /npmCommand, \["test"\]/);
   assert.match(healthcheck, /required_routes/);

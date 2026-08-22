@@ -1,6 +1,6 @@
 # OCP UI audit
 
-Status: Harness Baseline v1 locally acceptance-verified · Sites v0.5 frozen with recorded deployment drift
+Status: Harness Baseline v1 locally and in GitHub PR acceptance-verified · Sites v0.5 frozen with recorded deployment drift
 
 | Field | Value |
 | --- | --- |
@@ -49,7 +49,7 @@ Status: Harness Baseline v1 locally acceptance-verified · Sites v0.5 frozen wit
 | D-01 | P1 | Product governance | The v0.3 contract and implementation ledger existed only as repository files and had no discoverable location in the interface. | Approved direction could be mistaken for missing work or implemented behavior. | Add a repository-reference surface with explicit paths and a non-canonical boundary notice. | Resolved in current source/local runtime · canonical ingestion remains unimplemented |
 | H-01 | P1 | Product entry | The application defaults to Map even though the supplied v0.5 direction makes work conversation and capture the primary daily entry. | Users begin in a specialist projection instead of a familiar work-entry flow. | Default to a truthful Home that routes a local draft into existing input review and marks assistant/context/import capabilities as unconnected. | Resolved · desktop and 375 px runtime verified on parallel deployment |
 | Q-02 | P0 | Deployment/runtime | A successful provider deployment could be treated as proof that an independent actor can fetch, render, and use the same implementation. | Inaccessible or stale deployments can be reported as working, and validation falls back to manual screenshots. | Adopt `OCP-RC-002`, insert Deployment Truth, require independent browser evidence, and preserve target-specific failures. | Improved · machine contract and one-command local evidence pipeline implemented; frozen Sites drift retained; external preview pending |
-| Q-03 | P1 | Verification entry | Commands, routes, viewports, acceptance checks, and artifact requirements were distributed across scripts and prose. | A new actor could not know the complete verification contract without reconstructing it manually. | Add the Harness Baseline v1 manifest, contract, state ladder, capability registry, and hashed evidence bundle. | Resolved locally · `RUN-20260823-001` acceptance verified; GitHub execution pending |
+| Q-03 | P1 | Verification entry | Commands, routes, viewports, acceptance checks, and artifact requirements were distributed across scripts and prose. | A new actor could not know the complete verification contract without reconstructing it manually. | Add the Harness Baseline v1 manifest, contract, state ladder, capability registry, and hashed evidence bundle. | Resolved locally and in PR · `RUN-20260823-001` and Actions run `32598246321` passed |
 
 ## Baseline visual critic
 

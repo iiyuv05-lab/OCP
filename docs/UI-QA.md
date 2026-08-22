@@ -1,6 +1,6 @@
 # OCP UI QA
 
-Status: Harness Baseline v1 locally acceptance-verified; GitHub PR execution pending; frozen Sites snapshot remains a recorded parity failure
+Status: Harness Baseline v1 locally and in GitHub PR acceptance-verified; merge enforcement and external preview pending; frozen Sites snapshot remains a recorded parity failure
 
 This file records the latest executed checks only. Git history is the audit history.
 
@@ -20,7 +20,8 @@ This file records the latest executed checks only. Git history is the audit hist
 | Required interactions and viewports | PASS | Chromium completed direct open, local type, primary-nav click, and real Standards scroll at 1440 × 900, 768 × 1024, and 390 × 844; all three browser runs passed. | Observation submission was intentionally not performed. |
 | Evidence completeness | PASS | The bundle contains build log, manifests, final and per-browser results, twelve DOM snapshots, twelve screenshots, aggregate/per-browser console and network records, Playwright HTML/JSON reports, and 91 SHA-256 hashes. | Run evidence is ignored by Git and intended for local retention plus CI artifact upload. |
 | Runtime errors | PASS | Three browser actors recorded 0 console errors and 0 failed or HTTP 4xx/5xx product requests across 108 network events. | — |
-| GitHub repository capability | PASS · READ ONLY EXECUTED | Connected account `iiyuv05-lab` exposed public repository `iiyuv05-lab/OCP` with admin/push permissions; local `origin` is configured. | Push, PR, Actions, branch protection, required checks, and CODEOWNERS enforcement remain NOT RUN here. |
+| GitHub repository discovery | PASS | Connected account `iiyuv05-lab` exposed public repository `iiyuv05-lab/OCP` with admin/push permissions; local `origin` is configured. | Ordinary local HTTPS push is unavailable because this checkout has no GitHub credential; connector-backed write execution is recorded separately below. |
+| GitHub PR and Actions execution | PASS | Git Data write created branch `codex/harness-baseline-v1`; [PR #1](https://github.com/iiyuv05-lab/OCP/pull/1) opened; Actions run `32598246321` completed successfully; artifact `9482159491` (`ocp-harness-32598246321`, 7,698,600 bytes, SHA-256 digest recorded) uploaded. | PR merge, branch protection, required-check enforcement, CODEOWNERS enforcement, and an external preview remain NOT RUN. |
 | Diff integrity | PASS | `git diff --check` completed with no whitespace errors. | — |
 | Work-entry truth invariant | PASS | A targeted Node source test confirmed Home is the default, no verified assistant is claimed, the draft routes to input review, unconnected capabilities are named, and v0.5/status boundaries exist. | Source-level coverage only. |
 | Integrity Harness registration invariant | PASS | The source tests confirmed `OCP-MOD-INTEGRITY-001`, six separate truth records including Deployment Truth, the unmeasured-coverage rule, Standards discovery, and the first implemented repository/runtime-test slice. | Broader ingestion, scenario, and production acceptance coverage remains unimplemented. |

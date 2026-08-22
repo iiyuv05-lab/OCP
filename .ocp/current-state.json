@@ -1,7 +1,7 @@
 {
   "schema": "ocp.harness-current-state/v1",
   "baseline_id": "OCP-HARNESS-BASELINE-V1",
-  "recorded_at": "2026-08-22T20:26:33.535Z",
+  "recorded_at": "2026-08-22T21:00:10Z",
   "recorded_time_basis": "UTC",
   "state_ladder": [
     "DECLARED",
@@ -20,7 +20,15 @@
     "result": "PASS_LOCAL_COMMITTED_SOURCE",
     "latest_run_id": "RUN-20260823-001",
     "source_commit": "9b687d2aa3f138c51155117862b1cf814adcf977",
-    "evidence_path": ".ocp/evidence/runs/RUN-20260823-001"
+    "evidence_path": ".ocp/evidence/runs/RUN-20260823-001",
+    "github_execution": {
+      "state": "ACCEPTANCE_VERIFIED",
+      "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
+      "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7",
+      "workflow_run_id": 32598246321,
+      "result": "SUCCESS",
+      "artifact_id": 9482159491
+    }
   },
   "features": [
     {
@@ -51,9 +59,9 @@
       "id": "github-pr-workflow",
       "label": "GitHub PR workflow",
       "implementation": "IMPLEMENTED",
-      "latest_verified_stage": "IMPLEMENTED",
-      "runtime_verified": false,
-      "note": "Workflow files exist locally; PR and Actions execution have not run yet."
+      "latest_verified_stage": "ACCEPTANCE_VERIFIED",
+      "runtime_verified": true,
+      "note": "PR #1 executed Harness Baseline v1 successfully and uploaded artifact 9482159491. Merge enforcement remains separate and unverified."
     }
   ]
 }

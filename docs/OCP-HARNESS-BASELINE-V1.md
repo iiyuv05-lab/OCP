@@ -2,7 +2,7 @@
 
 Contract ID: `OCP-VERIFY-001`
 
-Status: local acceptance verified by `RUN-20260823-001` · GitHub PR execution pending
+Status: local acceptance verified by `RUN-20260823-001` · GitHub PR run `32598246321` succeeded with artifact `9482159491` · merge enforcement pending
 
 ## Purpose
 
@@ -71,7 +71,7 @@ The repository can carry workflow files, a PR template, and CODEOWNERS before th
 Connection existence ≠ Capability availability ≠ Execution verification
 ```
 
-Branch protection, required checks, CODEOWNERS enforcement, preview deployment, and production promotion remain separate capabilities and retain `NOT RUN` or `BLOCKED` until independently observed.
+PR #1 executed the Harness Baseline workflow successfully and preserved its CI artifact. Branch protection, required checks, CODEOWNERS enforcement, preview deployment, and production promotion remain separate capabilities and retain `NOT RUN` or `BLOCKED` until independently observed.
 
 ## Failure and rollback
 
