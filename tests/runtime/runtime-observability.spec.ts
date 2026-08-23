@@ -66,6 +66,15 @@ test("an independent actor can execute the Harness Baseline v1 browser contract"
   const screenshots: string[] = [];
   const domSnapshots: string[] = [];
   let executionError: unknown = null;
+  const safeLocalMutations = process.env.OCP_ALLOW_SAFE_LOCAL_MUTATIONS === "true";
+
+  if (safeLocalMutations) {
+    await page.setExtraHTTPHeaders({
+      "oai-authenticated-user-id": "41e17d7f-4d8b-4166-8778-a9f3cc755a87",
+      "oai-authenticated-user-email": "harness-owner@ocp.local",
+      "oai-authenticated-user-full-name": "Harness%20Owner",
+    });
+  }
 
   page.on("console", (message) => {
     consoleEvidence.push({ type: message.type(), text: message.text(), location: message.location() });
@@ -137,7 +146,7 @@ test("an independent actor can execute the Harness Baseline v1 browser contract"
     await captureDom("map");
 
     const primaryNav = page.getByRole("navigation", { name: /주요 보기|Primary views/ });
-    await primaryNav.getByRole("button", { name: /^(변경|Feed)\s*4$/ }).click();
+    await primaryNav.getByRole("button", { name: /^(변경|Feed)\s*\d+$/ }).click();
     await expect(page.getByRole("heading", { name: /기준 그래프에서 무엇이 바뀌었나|What changed in the reference graph/ })).toBeVisible();
     actions.push({ action: "click", target: "primary-nav:feed", result: "PASS" });
     record("AC-NAV-001", "Map to Feed transition is visible", "Feed landmark visible after click");
@@ -148,6 +157,77 @@ test("an independent actor can execute the Harness Baseline v1 browser contract"
     record("AC-ROUTES-001:/feed", "Feed landmark visible", "Feed landmark visible");
     await capture("feed");
     await captureDom("feed");
+
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    actions.push({ action: "open", target: "/dashboard", result: "PASS" });
+    await expect(page.getByRole("heading", { name: /추정 진척률이 아닌 운영 상태|Operational state, not a progress estimate/ })).toBeVisible();
+    record("AC-ROUTES-001:/dashboard", "Dashboard landmark visible", "Dashboard D1 read-model landmark visible");
+    await capture("dashboard-before");
+    await captureDom("dashboard-before");
+
+    if (safeLocalMutations) {
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await expect(page.locator(".membership-badge")).toHaveText(/소유자|Owner/);
+      const sourceCard = page.locator(".verified-source-card");
+      const startSource = sourceCard.getByRole("button", { name: /입력 검토|Review intake/ });
+      if (await startSource.isVisible().catch(() => false)) {
+        await startSource.click();
+        actions.push({ action: "click", target: "pmg-verified-source:review-intake", result: "PASS" });
+        await expect(page.getByLabel("SOURCE URL")).toHaveValue(/github\.com\/iiyuv05-lab\/OCP\/commit\/4ae35dd/);
+        await page.getByRole("button", { name: /관측 기록 \+ 후보 생성/ }).click();
+        actions.push({ action: "click", target: "pmg-verified-source:record-and-classify", result: "PASS" });
+        await expect(page.getByRole("heading", { name: "PMG 구현 소스 후보 연결" })).toBeVisible();
+        await expect(page.getByText(/결정 규칙 기반 분류|DETERMINISTIC CLASSIFICATION/)).toBeVisible();
+
+        const beforeApproval = await page.evaluate(async () => (await fetch("/api/bootstrap")).json()) as { operationalState: { headRevisionId: string; counts: Record<string, number> } };
+        expect(beforeApproval.operationalState.counts.appliedImplementationSources).toBe(0);
+        expect(beforeApproval.operationalState.counts.proposalsPendingReview).toBe(1);
+        const baseRevision = beforeApproval.operationalState.headRevisionId;
+        record("AC-GP-INPUT-001", "Input creates a classified human-gated proposal without applying", `pending=${beforeApproval.operationalState.counts.proposalsPendingReview}; applied_sources=0`);
+
+        await page.getByRole("button", { name: "Approve · do not apply" }).click();
+        actions.push({ action: "click", target: "pmg-source-proposal:approve-without-apply", result: "PASS" });
+        await expect(page.getByText(/승인됨 · 아직 미반영|Approved · not applied/)).toBeVisible();
+        const afterApproval = await page.evaluate(async () => (await fetch("/api/bootstrap")).json()) as { operationalState: { headRevisionId: string; counts: Record<string, number> } };
+        expect(afterApproval.operationalState.headRevisionId).toBe(baseRevision);
+        expect(afterApproval.operationalState.counts.proposalsApprovedNotApplied).toBe(1);
+        expect(afterApproval.operationalState.counts.appliedImplementationSources).toBe(0);
+        record("AC-GP-GATE-001", "Approval is recorded while Current remains unchanged", `head=${baseRevision}; approved_not_applied=1; applied_sources=0`);
+        await capture("golden-path-approved-not-applied");
+        await captureDom("golden-path-approved-not-applied");
+
+        await page.getByRole("button", { name: /승인된 변경 반영|Apply approved change/ }).click();
+        actions.push({ action: "click", target: "pmg-source-proposal:apply", result: "PASS" });
+        await expect(page.getByText(/반영됨 · 리비전 기록됨|Applied · revision recorded/)).toBeVisible();
+        const afterApply = await page.evaluate(async () => (await fetch("/api/bootstrap")).json()) as { operationalState: { headRevisionId: string; counts: Record<string, number>; implementationSources: unknown[] } };
+        expect(afterApply.operationalState.headRevisionId).not.toBe(baseRevision);
+        expect(afterApply.operationalState.counts.appliedImplementationSources).toBe(1);
+        expect(afterApply.operationalState.implementationSources).toHaveLength(1);
+        record("AC-GP-APPLY-001", "Separate apply creates a revision and one source relation", `head=${afterApply.operationalState.headRevisionId}; applied_sources=1`);
+      }
+
+      await page.goto("/map", { waitUntil: "domcontentloaded" });
+      await expect(page.locator(".source-link-chip")).toBeVisible();
+      await expect(page.locator(".source-link-chip")).toContainText(/반영된 소스 연결 1개|1 applied source link/);
+      actions.push({ action: "open", target: "/map:applied-source", result: "PASS" });
+      await capture("map-applied-source");
+      await captureDom("map-applied-source");
+
+      await page.goto("/feed", { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { name: "PMG 구현 소스 후보 연결" })).toBeVisible();
+      actions.push({ action: "open", target: "/feed:applied-source-revision", result: "PASS" });
+      await capture("feed-applied-source");
+      await captureDom("feed-applied-source");
+
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await expect(page.locator(".dashboard-metrics article").filter({ hasText: /반영된 소스 연결|APPLIED SOURCE LINKS/ }).getByText("1", { exact: true })).toBeVisible();
+      await expect(page.getByText("TRACKS_IMPLEMENTATION_SOURCE", { exact: true })).toBeVisible();
+      await expect(page.getByText("candidate_pr_pending_merge", { exact: true })).toBeVisible();
+      actions.push({ action: "open", target: "/dashboard:applied-source", result: "PASS" });
+      record("AC-GP-PROJECTION-001", "Map, Feed, and Dashboard expose the applied relation", "All three surfaces expose one applied source relation and pending-merge boundary");
+      await capture("dashboard-applied-source");
+      await captureDom("dashboard-applied-source");
+    }
 
     await page.goto("/standards", { waitUntil: "domcontentloaded" });
     actions.push({ action: "open", target: "/standards", result: "PASS" });

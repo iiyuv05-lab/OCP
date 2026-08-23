@@ -2,7 +2,7 @@
   "schema": "ocp.verification-contract/v1",
   "contract_id": "OCP-VERIFY-001",
   "baseline_id": "OCP-HARNESS-BASELINE-V1",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "commands": {
     "build": "npm run build",
     "start": "npm run start:runtime",
@@ -32,6 +32,11 @@
       "path": "/feed",
       "view": "feed",
       "expected_landmark": "기준 그래프에서 무엇이 바뀌었나|What changed in the reference graph"
+    },
+    {
+      "path": "/dashboard",
+      "view": "dashboard",
+      "expected_landmark": "추정 진척률이 아닌 운영 상태|Operational state, not a progress estimate"
     },
     {
       "path": "/standards",
@@ -74,6 +79,18 @@
       "requirement": "The Standards surface remains operable after an explicit scroll action."
     },
     {
+      "id": "AC-GP-GATE-001",
+      "requirement": "In an isolated local D1 runtime, the verified PMG source remains unapplied after capture and after approval."
+    },
+    {
+      "id": "AC-GP-APPLY-001",
+      "requirement": "A separate reviewer apply command creates one revision and one Current-model source relation."
+    },
+    {
+      "id": "AC-GP-PROJECTION-001",
+      "requirement": "Map, Feed, and Dashboard expose the same applied source relation and revision."
+    },
+    {
       "id": "AC-RUNTIME-001",
       "requirement": "The browser records zero console errors and zero failed or HTTP 4xx/5xx product requests."
     },
@@ -91,7 +108,9 @@
     "dom": "dom/",
     "console": "console.json",
     "network": "network.json",
-    "verification": "verification.json"
+    "verification": "verification.json",
+    "attestation_root": ".ocp/attestations/runs/",
+    "attestation": "<provider>-<execution_run_id>-attempt-<run_attempt>.json"
   },
   "evidence_requirements": [
     "run_id",
@@ -109,5 +128,21 @@
     "observed",
     "result",
     "artifact_hashes"
+  ],
+  "attestation_requirements": [
+    "subject.commit",
+    "contract.id",
+    "contract.version",
+    "execution.workflow",
+    "execution.run_id",
+    "execution.result",
+    "evidence.verification_sha256",
+    "evidence.primary_artifact.digest",
+    "verification.projects",
+    "verification.viewports",
+    "verification.console_errors",
+    "verification.network_failures",
+    "verifier.actor_class",
+    "recorded_at"
   ]
 }

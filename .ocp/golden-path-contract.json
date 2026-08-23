@@ -1,0 +1,55 @@
+{
+  "schema": "ocp.golden-path-contract/v1",
+  "contract_id": "OCP-GP-PMG-001",
+  "name": "PMG verified implementation-source intake",
+  "source_manifest": ".ocp/sources/pmg-ocp-harness-v1.json",
+  "target_model": "model-current",
+  "steps": [
+    "input",
+    "classify",
+    "propose",
+    "approve",
+    "apply",
+    "map_refresh",
+    "feed_refresh",
+    "dashboard_refresh",
+    "runtime_verify"
+  ],
+  "truth_rules": [
+    "The exact GitHub commit is a preserved external source reference; it is not Reality itself.",
+    "Classification is deterministic and records its basis; it is not a fabricated probability.",
+    "Observation ingestion creates a proposal and never mutates the Current model.",
+    "Approval and application are separate server-confirmed commands.",
+    "The applied relation says TRACKS_IMPLEMENTATION_SOURCE with candidate_pr_pending_merge status; it does not claim that main is promoted.",
+    "Map, Feed, and Dashboard read the same D1 operational read model.",
+    "Layout remains projector output and is never written by this path."
+  ],
+  "required_gate": "human",
+  "required_actor_roles": {
+    "input": ["writer", "reviewer", "admin"],
+    "approve": ["reviewer", "admin"],
+    "apply": ["reviewer", "admin"]
+  },
+  "acceptance_checks": [
+    {
+      "id": "AC-GP-INPUT-001",
+      "requirement": "The verified GitHub source creates one immutable external representation, one observation, evidence, deterministic classification, and a pending human-gated proposal."
+    },
+    {
+      "id": "AC-GP-GATE-001",
+      "requirement": "Approval returns applied=false and the Current model remains unchanged until a separate apply command succeeds."
+    },
+    {
+      "id": "AC-GP-APPLY-001",
+      "requirement": "Apply creates a revision and bitemporal relation, advances the workspace head, and is idempotent."
+    },
+    {
+      "id": "AC-GP-PROJECTION-001",
+      "requirement": "Map, Feed, and Dashboard expose the same applied source relation and revision from the server read model."
+    },
+    {
+      "id": "AC-GP-EVIDENCE-001",
+      "requirement": "The browser evidence contains the input, classification, approval, apply, navigation, DOM, console, network, and screenshot observations."
+    }
+  ]
+}

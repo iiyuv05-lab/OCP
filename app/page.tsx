@@ -19,15 +19,61 @@ import {
 } from "./ocp-data";
 import { canonicalEntities, type EntityKind, type ModelLayer, type StateKind } from "./canonical-model";
 import { deploymentVerificationStages, languageDimensions, referenceDocuments, type DeploymentVerificationState } from "./ocp-reference";
+import { pmgSourceIds, pmgVerifiedSource } from "./pmg-source";
 
 type LayerKey = "goal" | "current" | "reference" | "evidence";
 type PerspectiveKey = "team" | "reference" | "human-ai";
-type AppView = "home" | "map" | "feed" | "standards";
+type AppView = "home" | "map" | "feed" | "dashboard" | "standards";
 type InterfaceLocale = "ko" | "en" | "dual";
 type RequestState = "idle" | "saving" | "error";
 type ConnectionState = "checking" | "connected" | "snapshot";
 type WorkspaceRole = "viewer" | "writer" | "reviewer" | "admin";
 type ParticipationState = "checking" | "anonymous" | "visitor" | "unavailable" | WorkspaceRole;
+type OperationalState = {
+  schema: string;
+  source: string;
+  asOf: { validAt: number; recordedAt: number };
+  headRevisionId: string | null;
+  counts: {
+    observations: number;
+    proposalsPendingReview: number;
+    proposalsApprovedNotApplied: number;
+    proposalsApplied: number;
+    appliedImplementationSources: number;
+  };
+  implementationSources: Array<{
+    relationId: string;
+    predicate: string;
+    assertionKind: string;
+    recordedFrom: number;
+    properties: Record<string, unknown>;
+    artifact: {
+      id: string;
+      name: string;
+      summary: string;
+      sourceUrl: string;
+      mediaType: string;
+      status: string;
+      metadata: Record<string, unknown>;
+    };
+  }>;
+  feedEntries: Array<Record<string, unknown>>;
+};
+type PatchProposalDetail = {
+  id: string;
+  title: string;
+  rationale: string;
+  status: string;
+  required_gate: string;
+  risk_level: string;
+  base_revision_id: string;
+  applied_at_ms?: number | null;
+  operations: Array<Record<string, unknown>>;
+  checks: Array<Record<string, unknown>>;
+  reviews: Array<Record<string, unknown>>;
+  appliedRevision?: { id?: string; recorded_at_ms?: number } | null;
+};
+type DisplayFeedEvent = FeedEvent & { evidenceBasis?: string };
 const deploymentStateLabels: Record<DeploymentVerificationState, { en: string; ko: string }> = {
   verified: { en: "Verified", ko: "검증됨" },
   observed: { en: "Observed", ko: "관측됨" },
@@ -114,6 +160,33 @@ function canContribute(state: ParticipationState) {
 
 function canReviewPatches(state: ParticipationState) {
   return state === "reviewer" || state === "admin";
+}
+
+function operationalFeedEvents(state: OperationalState | null): DisplayFeedEvent[] {
+  if (!state) return [];
+  const knownEntityIds = new Set(canonicalEntities.map((entity) => entity.id));
+  return state.feedEntries.map((row) => {
+    const changeKind = String(row.change_kind ?? "state");
+    const kind: FeedEvent["kind"] = changeKind === "observation" ? "observation" : changeKind === "relation" ? "relation" : changeKind === "patch" ? "patch" : changeKind === "decision" ? "decision" : "state";
+    const primaryEntityId = String(row.primary_entity_id ?? "enterprise-nexus");
+    const recordedAt = Number(row.recorded_at_ms ?? 0);
+    return {
+      id: String(row.id),
+      kind,
+      kindLabel: kind === "observation" ? "관측 기록" : kind === "relation" ? "적용된 관계" : kind === "decision" ? "결정" : kind === "patch" ? "변경안" : "상태 갱신",
+      title: String(row.title ?? "Recorded change"),
+      detail: String(row.summary ?? ""),
+      time: Number.isFinite(recordedAt) && recordedAt > 0 ? new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }).format(recordedAt) : "recorded",
+      actor: String(row.actor_name ?? "OCP"),
+      evidenceCount: Number(row.evidence_count ?? 0),
+      confidence: Number(row.confidence_bp ?? 0) / 10000,
+      evidenceBasis: kind === "relation" ? "deterministic source rule" : undefined,
+      nodeId: knownEntityIds.has(primaryEntityId) ? primaryEntityId : "enterprise-nexus",
+      projection: primaryEntityId === "enterprise-nexus" ? "organization" : "workflow",
+      gate: kind === "relation" || kind === "patch" || kind === "decision" ? "human" : "auto",
+      timelineIndex: 3,
+    };
+  });
 }
 
 type SearchRecord = { projection: ProjectionKey; nodeId: string; label: string; kicker: string; subtitle: string; kind: EntityKind };
@@ -377,6 +450,7 @@ function MapToolbar({
   modelMode,
   connection,
   revision,
+  operationalState,
   onSelectAgent,
   onOpenPatch,
   onFit,
@@ -387,11 +461,15 @@ function MapToolbar({
   modelMode: ModelMode;
   connection: ConnectionState;
   revision: string;
+  operationalState: OperationalState | null;
   onSelectAgent: () => void;
   onOpenPatch: () => void;
   onFit: () => void;
   locale: InterfaceLocale;
 }) {
+  const goldenGateCount = operationalState
+    ? operationalState.counts.proposalsPendingReview + operationalState.counts.proposalsApprovedNotApplied
+    : 1;
   return (
     <header className="map-toolbar">
       <div>
@@ -400,10 +478,11 @@ function MapToolbar({
       </div>
       <div className="map-context">
         <span className={`canonical-badge source-${connection}`}><i /> {connection === "connected" ? uiText(locale, "DATA CONNECTED", "데이터 연결됨") : connection === "checking" ? uiText(locale, "CHECKING SOURCE", "소스 확인 중") : uiText(locale, "RECORDED SNAPSHOT", "기록 스냅샷")}</span>
+        <span className={`source-link-chip ${operationalState?.counts.appliedImplementationSources ? "applied" : "none"}`}><i>{operationalState?.counts.appliedImplementationSources ? "✓" : "◇"}</i>{operationalState ? uiText(locale, `${operationalState.counts.appliedImplementationSources} applied source link`, `반영된 소스 연결 ${operationalState.counts.appliedImplementationSources}개`) : uiText(locale, "Source links unknown", "소스 연결 미확인")}</span>
         <span className="mode-context"><i>{modeLabels[modelMode].symbol}</i>{interfaceLabel(locale, modeLabels[modelMode])}</span>
         <div className="operational-strip" aria-label={uiText(locale, "Recorded work status", "기록된 작업 상태")}>
           <button type="button" onClick={onSelectAgent} aria-label={uiText(locale, "Open REP Agent, working, recorded state", "작업 중으로 기록된 REP Agent 열기")}><i>AI</i><span><b>REP Agent</b><em>{uiText(locale, "Working", "작업 중")}</em></span></button>
-          <button className="human-gate" type="button" onClick={onOpenPatch} aria-label={uiText(locale, "Open one human-required patch", "사람 검토가 필요한 패치 1개 열기")}><i>!</i><span><b>{uiText(locale, "Human gate", "사람 승인")}</b><em>{uiText(locale, "1 waiting", "1개 대기")}</em></span></button>
+          <button className="human-gate" type="button" disabled={goldenGateCount === 0} onClick={onOpenPatch} aria-label={uiText(locale, `Open ${goldenGateCount} human-required patches`, `사람 검토가 필요한 패치 ${goldenGateCount}개 열기`)}><i>!</i><span><b>{uiText(locale, "Human gate", "사람 승인")}</b><em>{uiText(locale, `${goldenGateCount} waiting`, `${goldenGateCount}개 대기`)}</em></span></button>
           <span className="revision-chip">{revision}</span>
         </div>
         <button type="button" aria-label={uiText(locale, "Fit map", "지도 맞춤")} onClick={onFit}>⌗</button>
@@ -899,14 +978,16 @@ function FeedView({
   onFilter,
   onOpenEvent,
   onOpenPatch,
+  operationalState,
   revision,
   locale,
 }: {
-  events: FeedEvent[];
+  events: DisplayFeedEvent[];
   filter: string;
   onFilter: (filter: string) => void;
   onOpenEvent: (event: FeedEvent) => void;
   onOpenPatch: () => void;
+  operationalState: OperationalState | null;
   revision: string;
   locale: InterfaceLocale;
 }) {
@@ -920,8 +1001,17 @@ function FeedView({
   ];
   const visible = filter === "all" ? events : events.filter((event) => event.kind === filter);
   const autoApplied = events.filter((event) => event.gate === "auto").length;
-  const reviewCount = events.filter((event) => event.gate === "candidate" || event.gate === "human").length;
-  const humanCount = events.filter((event) => event.gate === "human").length;
+  const reviewCount = operationalState
+    ? operationalState.counts.proposalsPendingReview + operationalState.counts.proposalsApprovedNotApplied
+    : events.filter((event) => event.gate === "candidate" || event.gate === "human").length;
+  const humanCount = operationalState ? reviewCount : events.filter((event) => event.gate === "human").length;
+  const recordedDate = operationalState
+    ? new Intl.DateTimeFormat(locale === "en" ? "en-US" : "ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" }).format(operationalState.asOf.recordedAt)
+    : uiText(locale, "21 August", "8월 21일");
+  const appliedSource = operationalState?.implementationSources[0];
+  const pendingLabel = operationalState?.counts.proposalsApprovedNotApplied
+    ? uiText(locale, "Approved · not applied", "승인됨 · 아직 미반영")
+    : uiText(locale, "Pending human review", "사람 승인 대기");
   return (
     <div className="feed-workspace">
       <aside className="feed-rail">
@@ -931,7 +1021,7 @@ function FeedView({
       </aside>
       <section className="feed-list">
         <header><div><p>CANONICAL GRAPH · {uiText(locale, "SNAPSHOT", "스냅샷")} {revision}</p><h1>{uiText(locale, "What changed in the graph?", "기준 그래프에서 무엇이 바뀌었나?")}</h1></div></header>
-        <div className="feed-date"><span>{uiText(locale, "Today · 21 August", "오늘 · 8월 21일")}</span><i /></div>
+        <div className="feed-date"><span>{operationalState ? uiText(locale, `Recorded · ${recordedDate}`, `기록됨 · ${recordedDate}`) : uiText(locale, "Recorded snapshot · 21 August", "기록 스냅샷 · 8월 21일")}</span><i /></div>
         {visible.length === 0 ? <div className="empty-feed"><b>{uiText(locale, "No recorded changes in this filter", "이 필터에 기록된 변경이 없습니다")}</b><span>{uiText(locale, "Choose another change type to continue.", "다른 변경 유형을 선택하세요.")}</span></div> : visible.map((event) => (
           <article className={`feed-card kind-${event.kind}`} key={event.id}>
             <div className="feed-glyph"><i>{event.kind === "state" ? "↗" : event.kind === "relation" ? "↔" : event.kind === "observation" ? "OB" : event.kind === "patch" ? "∆" : "✓"}</i><span /></div>
@@ -939,21 +1029,95 @@ function FeedView({
               <p><span>{event.kindLabel}</span><time>{event.time}</time><em className={`gate-badge ${event.gate}`}>{event.gate === "auto" ? uiText(locale, "AUTO · REVERSIBLE", "자동 · 되돌릴 수 있음") : event.gate === "human" ? uiText(locale, "HUMAN GATE", "사람 승인") : uiText(locale, "REVIEW CANDIDATE", "검토 후보")}</em></p>
               <h2>{event.title}</h2>
               <strong>{event.detail}</strong>
-              <div><span><i>{event.actor === "REP Agent" ? "AI" : event.actor.slice(0, 2).toUpperCase()}</i>{event.actor}</span><span>근거 {event.evidenceCount}개</span><span>신뢰도 {Math.round(event.confidence * 100)}%</span></div>
+              <div><span><i>{event.actor === "REP Agent" ? "AI" : event.actor.slice(0, 2).toUpperCase()}</i>{event.actor}</span><span>근거 {event.evidenceCount}개</span><span>{event.evidenceBasis ? uiText(locale, "Basis: deterministic rule", "근거: 결정 규칙 일치") : uiText(locale, `Confidence ${Math.round(event.confidence * 100)}%`, `신뢰도 ${Math.round(event.confidence * 100)}%`)}</span></div>
             </div>
             <button type="button" onClick={() => event.kind === "patch" ? onOpenPatch() : onOpenEvent(event)}>{event.kind === "patch" ? uiText(locale, "Review patch", "패치 검토") : uiText(locale, "View on map", "지도에서 보기")} <span>→</span></button>
           </article>
         ))}
       </section>
       <aside className="feed-summary">
-        <p>{uiText(locale, "RECORDED SNAPSHOT · 21 AUG", "기록 스냅샷 · 8월 21일")}</p>
+        <p>{operationalState ? uiText(locale, "D1 RECORDED STATE", "D1 기록 상태") : uiText(locale, "RECORDED SNAPSHOT · 21 AUG", "기록 스냅샷 · 8월 21일")}</p>
         <h2>{uiText(locale, "Review queue", "검토 대기열")}</h2>
         <div className="queue-summary"><strong>{reviewCount}</strong><span>{uiText(locale, "recorded changes need attention", "개의 기록된 변경에 확인이 필요합니다")}</span></div>
         <dl><div><dt>{uiText(locale, "Graph revision", "그래프 리비전")}</dt><dd>{revision}</dd></div><div><dt>{uiText(locale, "Recorded auto", "자동 기록")}</dt><dd>{autoApplied}</dd></div><div><dt>{uiText(locale, "Needs review", "검토 필요")}</dt><dd className="amber">{reviewCount}</dd></div><div><dt>{uiText(locale, "Human gate", "사람 승인")}</dt><dd className="red">{humanCount}</dd></div></dl>
-        <section><p>{uiText(locale, "WAITING ON YOU", "확인 대기")}</p><article><i>!</i><div><b>Reference Model Patch #014</b><span>{uiText(locale, "3 claims · Human gate", "주장 3개 · 사람 승인")}</span></div><button type="button" aria-label={uiText(locale, "Review Reference Model Patch 014", "Reference Model Patch 014 검토")} onClick={onOpenPatch}>→</button></article></section>
-        <section className="sensor-card"><p>{uiText(locale, "RECORDED SOURCE", "기록된 소스")}</p><div><i className="recorded-source">◌</i><span><b>REP Recorder</b><em>{uiText(locale, "Last captured · 21 Aug 11:08", "마지막 수집 · 8월 21일 11:08")}</em></span></div></section>
+        <section><p>{uiText(locale, "WAITING ON YOU", "확인 대기")}</p>{reviewCount > 0 ? <article><i>!</i><div><b>{uiText(locale, "PMG implementation source", "PMG 구현 소스")}</b><span>{pendingLabel}</span></div><button type="button" aria-label={uiText(locale, "Review PMG implementation source", "PMG 구현 소스 검토")} onClick={onOpenPatch}>→</button></article> : <div className="feed-summary-empty"><b>{uiText(locale, "No proposal waiting", "대기 중인 변경안 없음")}</b><span>{uiText(locale, "Approval and application counts are read from D1.", "승인과 반영 수치는 D1에서 읽습니다.")}</span></div>}</section>
+        <section className="sensor-card"><p>{uiText(locale, "APPLIED SOURCE RELATION", "반영된 소스 관계")}</p><div><i className="recorded-source">◌</i><span><b>{appliedSource ? "GitHub commit" : uiText(locale, "No applied relation", "반영된 관계 없음")}</b><em>{appliedSource ? String(appliedSource.artifact.metadata.commit ?? appliedSource.artifact.sourceUrl).slice(0, 12) : uiText(locale, "No value is inferred from the fixture map.", "fixture 지도에서 값을 추정하지 않습니다.")}</em></span></div></section>
       </aside>
     </div>
+  );
+}
+
+function DashboardView({
+  state,
+  connection,
+  locale,
+  onOpenPatch,
+  onStartSource,
+}: {
+  state: OperationalState | null;
+  connection: ConnectionState;
+  locale: InterfaceLocale;
+  onOpenPatch: () => void;
+  onStartSource: () => void;
+}) {
+  if (!state) {
+    return (
+      <section className="dashboard-workspace dashboard-empty" id="main-content" aria-labelledby="dashboard-title">
+        <header><small>D1 OPERATIONAL READ MODEL</small><h1 id="dashboard-title">{uiText(locale, "Loading recorded state…", "기록된 상태를 불러오는 중…")}</h1></header>
+        <p>{connection === "snapshot" ? uiText(locale, "The server read model is unavailable. No values are inferred from the fixture map.", "서버 읽기 모델을 사용할 수 없습니다. fixture 지도에서 값을 추정하지 않습니다.") : uiText(locale, "Waiting for the server-confirmed read model.", "서버가 확인한 읽기 모델을 기다리고 있습니다.")}</p>
+      </section>
+    );
+  }
+
+  const counts = state.counts;
+  const source = state.implementationSources[0];
+  const nextAction = counts.proposalsApprovedNotApplied > 0
+    ? { label: uiText(locale, "Apply the approved proposal", "승인된 변경안 반영"), action: onOpenPatch }
+    : counts.proposalsPendingReview > 0
+      ? { label: uiText(locale, "Review the human gate", "사람 승인 검토"), action: onOpenPatch }
+      : source
+        ? { label: uiText(locale, "Review PR merge separately", "PR 병합은 별도로 검토"), action: () => window.open(pmgVerifiedSource.source.pull_request, "_blank", "noopener,noreferrer") }
+        : { label: uiText(locale, "Start the verified PMG source", "PMG 검증 소스 시작"), action: onStartSource };
+
+  return (
+    <section className="dashboard-workspace" id="main-content" aria-labelledby="dashboard-title">
+      <header className="dashboard-hero">
+        <div><small>PLUS MINUS G. · D1 READ MODEL</small><h1 id="dashboard-title">{uiText(locale, "Operational state, not a progress estimate", "추정 진척률이 아닌 운영 상태")}</h1><p>{uiText(locale, "Every value below is read from the same server state used by the applied source link and change feed.", "아래 값은 적용된 소스 연결과 변경 피드가 사용하는 동일한 서버 상태에서 읽습니다.")}</p></div>
+        <span className="dashboard-asof"><small>{uiText(locale, "RECORDED AS OF", "기록 기준")}</small><b>{new Date(state.asOf.recordedAt).toLocaleString(locale === "en" ? "en-GB" : "ko-KR", { timeZone: "Asia/Seoul" })}</b></span>
+      </header>
+
+      <div className="dashboard-metrics" aria-label={uiText(locale, "Recorded operational counts", "기록된 운영 수치") }>
+        <article><small>{uiText(locale, "OBSERVATIONS", "관측")}</small><strong>{counts.observations}</strong><span>{uiText(locale, "stored inputs", "저장된 입력")}</span></article>
+        <article><small>{uiText(locale, "PENDING REVIEW", "검토 대기")}</small><strong>{counts.proposalsPendingReview}</strong><span>{uiText(locale, "human-gated proposals", "사람 승인 변경안")}</span></article>
+        <article><small>{uiText(locale, "APPROVED / NOT APPLIED", "승인 / 미반영")}</small><strong>{counts.proposalsApprovedNotApplied}</strong><span>{uiText(locale, "separate apply required", "별도 반영 필요")}</span></article>
+        <article><small>{uiText(locale, "APPLIED SOURCE LINKS", "반영된 소스 연결")}</small><strong>{counts.appliedImplementationSources}</strong><span>{uiText(locale, "Current-model relations", "Current 모델 관계")}</span></article>
+      </div>
+
+      <div className="dashboard-grid">
+        <article className="dashboard-source">
+          <header><small>{uiText(locale, "IMPLEMENTATION SOURCE", "구현 소스")}</small><span className={source ? "applied" : "absent"}>{source ? uiText(locale, "APPLIED", "반영됨") : uiText(locale, "NOT APPLIED", "미반영")}</span></header>
+          {source ? <>
+            <h2>{source.artifact.name}</h2>
+            <p>{source.artifact.summary}</p>
+            <dl><div><dt>{uiText(locale, "Relation", "관계")}</dt><dd>{source.predicate}</dd></div><div><dt>{uiText(locale, "Promotion state", "승격 상태")}</dt><dd>{String(source.properties.canonicalStatus ?? "unknown")}</dd></div><div><dt>{uiText(locale, "Revision", "리비전")}</dt><dd>{state.headRevisionId}</dd></div></dl>
+            <a href={source.artifact.sourceUrl} target="_blank" rel="noreferrer">{uiText(locale, "Open exact commit", "정확한 커밋 열기")} ↗</a>
+          </> : <div className="dashboard-source-empty"><i>◇</i><b>{uiText(locale, "No applied implementation source", "반영된 구현 소스가 없습니다")}</b><span>{uiText(locale, "A captured observation or an approval alone does not create this relation.", "관측 기록이나 승인만으로는 이 관계가 생기지 않습니다.")}</span></div>}
+        </article>
+
+        <article className="dashboard-integrity">
+          <header><small>{uiText(locale, "INTEGRITY", "무결성")}</small><span>{state.source}</span></header>
+          <ul>
+            <li><i>✓</i><span><b>{uiText(locale, "Valid and recorded time", "유효 시간과 기록 시간")}</b><small>{uiText(locale, "Independent cutoffs preserved", "독립 기준 유지")}</small></span></li>
+            <li><i>✓</i><span><b>{uiText(locale, "Approval ≠ application", "승인 ≠ 반영")}</b><small>{counts.proposalsApprovedNotApplied} {uiText(locale, "currently waiting after approval", "개가 승인 후 대기 중")}</small></span></li>
+            <li><i>✓</i><span><b>{uiText(locale, "Source status remains bounded", "소스 상태 경계 유지")}</b><small>{uiText(locale, "PR pending merge is not main promotion", "PR 병합 대기는 main 승격이 아님")}</small></span></li>
+          </ul>
+        </article>
+
+        <article className="dashboard-next">
+          <small>{uiText(locale, "NEXT VALID ACTION", "다음 유효 동작")}</small><h2>{nextAction.label}</h2><p>{uiText(locale, "The action is derived from recorded proposal and source-link states, not from a completion score.", "이 동작은 완료율이 아니라 기록된 변경안과 소스 연결 상태에서 결정됩니다.")}</p><button type="button" onClick={nextAction.action}>{nextAction.label} <span>→</span></button>
+        </article>
+      </div>
+    </section>
   );
 }
 
@@ -961,12 +1125,18 @@ function WorkEntryHome({
   locale,
   connection,
   revision,
+  operationalState,
   onCapture,
+  onVerifiedSource,
+  onOpenDashboard,
 }: {
   locale: InterfaceLocale;
   connection: ConnectionState;
   revision: string;
+  operationalState: OperationalState | null;
   onCapture: (type: "quick" | "file" | "link" | "recorder", draft?: string) => void;
+  onVerifiedSource: () => void;
+  onOpenDashboard: () => void;
 }) {
   const [draft, setDraft] = useState("");
   const [scope, setScope] = useState<"pmg" | "ocp" | "rep">("pmg");
@@ -980,6 +1150,7 @@ function WorkEntryHome({
     : connection === "checking"
       ? uiText(locale, "Checking source", "소스 확인 중")
       : uiText(locale, "Recorded snapshot", "기록 스냅샷");
+  const appliedSource = operationalState?.implementationSources.some((source) => source.artifact.id === pmgSourceIds.artifact) ?? false;
 
   return (
     <section className="home-workspace" id="main-content" aria-labelledby="work-entry-title">
@@ -1029,6 +1200,13 @@ function WorkEntryHome({
           <span><small>{uiText(locale, "REVISION", "리비전")}</small><b>{revision}</b></span>
           <span><small>{uiText(locale, "MODEL EFFECT", "모델 영향")}</small><b>{uiText(locale, "None before approval", "승인 전 없음")}</b></span>
         </div>
+
+        <article className={`verified-source-card ${appliedSource ? "applied" : "ready"}`}>
+          <div className="verified-source-mark"><i>GH</i><span /></div>
+          <div><small>{uiText(locale, "PMG REAL SOURCE · VERIFIED SNAPSHOT", "PMG 실자료 · 검증된 스냅샷")}</small><h2>OCP Harness Baseline v1</h2><p><code>{pmgVerifiedSource.source.commit.slice(0, 7)}</code> · Actions #{pmgVerifiedSource.verification.workflow_run_id} {pmgVerifiedSource.verification.result} · PR #1 {uiText(locale, "not merged", "미병합")}</p></div>
+          <span className="verified-source-state">{appliedSource ? uiText(locale, "SOURCE LINK APPLIED", "소스 연결 반영됨") : uiText(locale, "READY FOR INTAKE", "입력 준비됨")}</span>
+          <button type="button" onClick={appliedSource ? onOpenDashboard : onVerifiedSource}>{appliedSource ? uiText(locale, "Open dashboard", "대시보드 열기") : uiText(locale, "Review intake", "입력 검토")} <span>→</span></button>
+        </article>
       </div>
 
       <aside className="work-boundary-panel" aria-label={uiText(locale, "Implementation boundary", "구현 경계")}>
@@ -1040,7 +1218,7 @@ function WorkEntryHome({
         </section>
         <section className="boundary-missing">
           <small>{uiText(locale, "NOT CONNECTED", "미연결")}</small>
-          <p>{uiText(locale, "Main LLM · context recognition · account imports · Dashboard · deployment registry", "Main LLM · 컨텍스트 인식 · 계정 가져오기 · Dashboard · 배포 등록부")}</p>
+          <p>{uiText(locale, "Main LLM · general context recognition · account imports · deployment registry", "Main LLM · 일반 컨텍스트 인식 · 계정 가져오기 · 배포 등록부")}</p>
         </section>
         <footer><b>{uiText(locale, "Target path", "목표 경로")}</b><span>{uiText(locale, "External tool → OCP input → candidate → review → event-backed state", "외부 도구 → OCP 입력 → 후보 → 검토 → 이벤트 기반 상태")}</span></footer>
       </aside>
@@ -1211,48 +1389,69 @@ function InputDrawer({
 
 function PatchReviewDrawer({
   open,
+  proposal,
   decision,
   onClose,
   onDecision,
+  onApply,
   requestState,
   error,
   applied,
   canReview,
+  applyAvailable,
+  locale,
 }: {
   open: boolean;
+  proposal: PatchProposalDetail | null;
   decision: "pending" | "approved" | "rejected" | "evidence" | "deferred";
   onClose: () => void;
   onDecision: (decision: "approved" | "rejected" | "evidence" | "deferred") => void;
+  onApply: () => void;
   requestState: RequestState;
   error: string;
   applied: boolean;
   canReview: boolean;
+  applyAvailable: boolean;
+  locale: InterfaceLocale;
 }) {
   const dialogRef = useModalFocus<HTMLElement>(open, onClose);
   if (!open) return null;
+  const dynamic = proposal?.id === pmgSourceIds.proposal;
+  const title = proposal?.title ?? "Reference Model Patch #014";
+  const baseRevision = proposal?.base_revision_id?.replace(/^revision-/, "") ?? "r214";
+  const currentStatus = proposal?.status ?? (decision === "pending" ? "pending_review" : decision);
+  const dynamicOperation = dynamic && proposal?.operations[0]?.after_json ? (() => { try { return JSON.parse(String(proposal.operations[0].after_json)) as Record<string, unknown>; } catch { return null; } })() : null;
   return (
     <div className="drawer-layer">
       <button className="drawer-backdrop" type="button" tabIndex={-1} aria-hidden="true" onClick={onClose} />
       <aside className="patch-drawer" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="patch-title" aria-busy={requestState === "saving"}>
-        <header><div><small>HUMAN GATE · REFERENCE MODEL</small><h2 id="patch-title">Reference Model Patch #014</h2><p>Base revision r214 · approval does not apply the patch</p></div><button data-autofocus type="button" aria-label="Close patch review" onClick={onClose}>×</button></header>
+        <header><div><small>HUMAN GATE · {dynamic ? "CURRENT MODEL SOURCE LINK" : "REFERENCE MODEL"}</small><h2 id="patch-title">{title}</h2><p>Base revision {baseRevision} · {uiText(locale, "approval does not apply the patch", "승인만으로 변경안은 반영되지 않습니다")}</p></div><button data-autofocus type="button" aria-label="Close patch review" onClick={onClose}>×</button></header>
         <div className="pipeline" aria-label="Validation pipeline">
-          <span className="done">Candidate<i>✓</i></span><b>→</b><span className="done">Evidence<i>✓</i></span><b>→</b><span className="done">GPT analysis<i>✓</i></span><b>→</b><span className="done">Claude challenge<i>✓</i></span><b>→</b><span className="active">Human gate<i>!</i></span>
+          <span className="done">{uiText(locale, "Input", "입력")}<i>✓</i></span><b>→</b><span className="done">{uiText(locale, "Classified", "분류") }<i>✓</i></span><b>→</b><span className="done">{uiText(locale, "Evidence", "근거")}<i>✓</i></span><b>→</b><span className={currentStatus === "pending_review" ? "active" : "done"}>{uiText(locale, "Human gate", "사람 승인")}<i>{currentStatus === "pending_review" ? "!" : "✓"}</i></span><b>→</b><span className={currentStatus === "applied" ? "done" : currentStatus === "approved" ? "active" : "waiting"}>{uiText(locale, "Apply", "반영")}<i>{currentStatus === "applied" ? "✓" : "·"}</i></span>
         </div>
-        <section className="patch-summary">
+        {dynamic ? <section className="patch-summary dynamic-patch-summary">
+          <p><b>{uiText(locale, "DETERMINISTIC CLASSIFICATION", "결정 규칙 기반 분류")}</b><em>1 operation · reversible</em></p>
+          <article><i>↗</i><div><small>SOURCE · GITHUB COMMIT</small><b>{pmgVerifiedSource.source.repository} @ {pmgVerifiedSource.source.commit.slice(0, 7)}</b><span>Actions #{pmgVerifiedSource.verification.workflow_run_id} {pmgVerifiedSource.verification.result} · artifact digest preserved</span></div></article>
+          <article><i>◇</i><div><small>SCOPE · EXACT IDENTIFIER MATCH</small><b>Plus Minus G. → OCP</b><span>No probability invented · repository and scope rule recorded</span></div></article>
+          <article><i>＋</i><div><small>RELATION · LINK</small><b>Plus Minus G. → {String(dynamicOperation?.predicate ?? "TRACKS_IMPLEMENTATION_SOURCE")} → verified source</b><span>Current model · candidate_pr_pending_merge · HUMAN gate</span></div></article>
+        </section> : <section className="patch-summary">
           <p><b>GRAPH DIFF</b><em>3 operations · reversible</em></p>
           <article><i>＋</i><div><small>RELATION · INSERT</small><b>Recorder Evidence Bridge → DEPENDS ON → OCP v0</b><span>Confidence 88% · 2 supporting evidence items</span></div></article>
           <article><i>↗</i><div><small>STATE · SUPERSEDE</small><b>Evidence review: Reviewing → Accepted candidate</b><span>Valid 21 Aug 13:40 · Recorded 21 Aug 13:54</span></div></article>
           <article><i>◇</i><div><small>REFERENCE MODEL · LINK</small><b>REP generation: Current → Direct predecessor</b><span>This operation raises the gate to HUMAN.</span></div></article>
-        </section>
-        <section className="verification-grid">
+        </section>}
+        {dynamic ? <section className="verification-grid dynamic-verification-grid">
+          {(proposal?.checks ?? []).map((check) => <article key={String(check.id)}><small>{String(check.checker_role ?? "CHECK").toUpperCase()} · {String(check.status ?? "unknown").toUpperCase()}</small><b>{String(check.checker_name ?? "Validation check")}</b><span>{String(check.status) === "warning" ? "PR #1 is not merged; source stays a candidate." : "Recorded check passed against the exact source manifest."}</span></article>)}
+          <article><small>{uiText(locale, "RISK", "위험")}</small><b>{String(proposal?.risk_level ?? "high").toUpperCase()} · authority-bearing link</b><span>{uiText(locale, "No deletion. A later unlink revision can reverse this relation.", "삭제 없음. 이후 unlink 리비전으로 관계를 되돌릴 수 있습니다.")}</span></article>
+        </section> : <section className="verification-grid">
           <article><small>PROVENANCE</small><b>Workshop audio → Transcript v1 → EV-029</b><span>Raw artifact immutable · lineage intact</span></article>
           <article><small>ADVERSARIAL CHECK</small><b>1 ambiguity, no identity collision</b><span>Claude challenge recommends explicit valid time.</span></article>
           <article><small>RISK</small><b>Medium · structural reference change</b><span>No deletion. Rollback patch can restore r214.</span></article>
           <article><small>CONSTITUTIONAL RULE</small><b>Reference changes require a human</b><span>Client requests cannot lower this gate.</span></article>
-        </section>
-        {error && <div className="request-error patch-error" role="alert"><i>!</i><span><b>Decision not recorded</b>{error}</span></div>}
-        {decision !== "pending" && <div className={`patch-decision ${decision}`}>{decision === "approved" ? `Approved · ${applied ? "applied" : "not applied"}` : `Decision recorded: ${decision}`}</div>}
-        <footer>{canReview ? <><button disabled={requestState === "saving"} type="button" onClick={() => onDecision("rejected")}>Reject</button><button disabled={requestState === "saving"} type="button" onClick={() => onDecision("evidence")}>Request evidence</button><button disabled={requestState === "saving"} type="button" onClick={() => onDecision("deferred")}>Defer</button><button className="approve" disabled={requestState === "saving"} type="button" onClick={() => onDecision("approved")}>{requestState === "saving" ? "Recording…" : "Approve · do not apply"}</button></> : <p className="patch-read-only">This is a human gate. A reviewer or owner can record a decision; participants can inspect the evidence and add observations.</p>}</footer>
+        </section>}
+        {error && <div className="request-error patch-error" role="alert"><i>!</i><span><b>{uiText(locale, "Command not recorded", "명령이 기록되지 않았습니다")}</b>{error}</span></div>}
+        {(decision !== "pending" || ["approved", "applied", "rejected"].includes(currentStatus)) && <div className={`patch-decision ${currentStatus}`}>{currentStatus === "approved" ? uiText(locale, "Approved · not applied", "승인됨 · 아직 미반영") : currentStatus === "applied" || applied ? uiText(locale, "Applied · revision recorded", "반영됨 · 리비전 기록됨") : `${uiText(locale, "Decision recorded", "결정 기록됨")}: ${currentStatus}`}</div>}
+        <footer>{canReview ? currentStatus === "approved" && dynamic && applyAvailable ? <><span className="apply-separation-note">{uiText(locale, "Approval is recorded. Apply is a separate Current-model command.", "승인이 기록되었습니다. 반영은 별도의 Current 모델 명령입니다.")}</span><button className="apply-command" disabled={requestState === "saving"} type="button" onClick={onApply}>{requestState === "saving" ? uiText(locale, "Applying…", "반영 중…") : uiText(locale, "Apply approved change", "승인된 변경 반영")}</button></> : currentStatus === "applied" ? <p className="patch-read-only">{uiText(locale, "Applied. The resulting revision is now available to Map, Feed, and Dashboard.", "반영되었습니다. 생성된 리비전을 지도·변경·대시보드에서 함께 읽습니다.")}</p> : <><button disabled={requestState === "saving"} type="button" onClick={() => onDecision("rejected")}>Reject</button><button disabled={requestState === "saving"} type="button" onClick={() => onDecision("evidence")}>Request evidence</button><button disabled={requestState === "saving"} type="button" onClick={() => onDecision("deferred")}>Defer</button><button className="approve" disabled={requestState === "saving"} type="button" onClick={() => onDecision("approved")}>{requestState === "saving" ? "Recording…" : "Approve · do not apply"}</button></> : <p className="patch-read-only">This is a human gate. A reviewer or owner can record a decision; participants can inspect the evidence and add observations.</p>}</footer>
       </aside>
     </div>
   );
@@ -1382,14 +1581,32 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
   const [patchApplied, setPatchApplied] = useState(false);
   const [connection, setConnection] = useState<ConnectionState>("checking");
   const [revision, setRevision] = useState("r214");
+  const [operationalState, setOperationalState] = useState<OperationalState | null>(null);
   const [participation, setParticipation] = useState<ParticipationState>("checking");
   const [participationError, setParticipationError] = useState("");
+  const [activeProposalId, setActiveProposalId] = useState("patch-reference-014");
+  const [activeProposal, setActiveProposal] = useState<PatchProposalDetail | null>(null);
 
   const graph = useMemo(() => projectCanonicalGraph(projection, timelinePoints[timeIndex].validAt, recordedTimeOptions[recordedIndex].recordedAt, repLens, preferredModelFor(perspective)), [projection, timeIndex, recordedIndex, repLens, perspective]);
   const primaryLayer = primaryLayerFor(modelMode, layers, perspective);
   const visibleGraph = useMemo(() => graphForLayers(graph, layers, modelMode), [graph, layers, modelMode]);
   const selectedNode = visibleGraph.nodes.find((node) => node.id === selectedId) ?? visibleGraph.nodes.find((node) => node.id === visibleGraph.focusId) ?? graph.nodes[0];
-  const events = useMemo(() => [...extraEvents, ...feedEvents].slice(0, 50), [extraEvents]);
+  const serverEvents = useMemo(() => operationalFeedEvents(operationalState), [operationalState]);
+  const events = useMemo<DisplayFeedEvent[]>(() => {
+    const source = operationalState ? [...extraEvents, ...serverEvents] : [...extraEvents, ...feedEvents];
+    return source.filter((event, index) => source.findIndex((candidate) => candidate.id === event.id) === index).slice(0, 50);
+  }, [extraEvents, operationalState, serverEvents]);
+
+  const refreshOperationalState = useCallback(async (signal?: AbortSignal) => {
+    const response = await fetch("/api/bootstrap", { signal, headers: { accept: "application/json" } });
+    if (!response.ok) throw new Error(`Source returned ${response.status}`);
+    const payload = await response.json() as { headRevision?: { id?: string } | null; operationalState?: OperationalState };
+    const id = payload.operationalState?.headRevisionId ?? payload.headRevision?.id;
+    if (id) setRevision(id.replace(/^revision-/, ""));
+    if (payload.operationalState) setOperationalState(payload.operationalState);
+    setConnection("connected");
+    return payload.operationalState ?? null;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1420,22 +1637,15 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/bootstrap", { signal: controller.signal, headers: { accept: "application/json" } })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`Source returned ${response.status}`);
-        return response.json() as Promise<{ headRevision?: { id?: string } | null }>;
-      })
-      .then((payload) => {
-        const id = payload.headRevision?.id;
-        if (id) setRevision(id.replace(/^revision-/, ""));
-        setConnection("connected");
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setConnection("snapshot");
-      });
+    queueMicrotask(() => {
+      refreshOperationalState(controller.signal)
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setConnection("snapshot");
+        });
+    });
     return () => controller.abort();
-  }, []);
+  }, [refreshOperationalState]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1543,11 +1753,36 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
     openInput();
   }, [openInput]);
 
-  const openPatchReview = useCallback(() => {
+  const beginVerifiedPmgSource = useCallback(() => {
+    setInputType("link");
+    setSourceLink(pmgVerifiedSource.source.url);
+    setObservation("OCP Harness Baseline v1 verified implementation source");
+    setObservationKind("observed");
+    openInput();
+  }, [openInput]);
+
+  const loadPatchProposal = useCallback(async (proposalId: string) => {
+    const response = await fetch(`/api/patch-proposals/${encodeURIComponent(proposalId)}`, { headers: { accept: "application/json" } });
+    if (!response.ok) throw new Error(await apiErrorMessage(response));
+    const payload = await response.json() as { proposal?: PatchProposalDetail };
+    if (!payload.proposal?.id) throw new Error("The server returned no patch proposal.");
+    setActiveProposal(payload.proposal);
+    setActiveProposalId(payload.proposal.id);
+    setPatchApplied(payload.proposal.status === "applied");
+    setPatchDecision(payload.proposal.status === "approved" || payload.proposal.status === "applied" ? "approved" : payload.proposal.status === "rejected" ? "rejected" : "pending");
+    return payload.proposal;
+  }, []);
+
+  const openPatchReview = useCallback((proposalId = "patch-reference-014") => {
     setPatchError("");
     setPatchRequest("idle");
+    setActiveProposalId(proposalId);
+    void loadPatchProposal(proposalId).catch((error) => {
+      setActiveProposal(null);
+      setPatchError(error instanceof Error ? error.message : "The proposal could not be loaded.");
+    });
     setPatchOpen(true);
-  }, []);
+  }, [loadPatchProposal]);
 
   const openAgent = useCallback(() => {
     setProjection("team");
@@ -1589,7 +1824,7 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
       }
       const observationResponse = await fetch("/api/observations", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ text: title, captureMethod: inputType, stateKind: observationKind, validFrom: new Date(observationValidTime).getTime(), contextId: "context-ocp", artifactId, sourceUrl: inputType === "link" ? sourceLink.trim() : undefined, idempotencyKey }) });
       if (!observationResponse.ok) throw new Error(await apiErrorMessage(observationResponse));
-      const payload = await observationResponse.json() as { observation?: { id?: string }; candidates?: number; canonicalChanged?: boolean };
+      const payload = await observationResponse.json() as { observation?: { id?: string }; candidates?: number; canonicalChanged?: boolean; proposalId?: string; proposalStatus?: string; classification?: { basis?: string; scope_entity_id?: string; canonical_status?: string } };
       if (!payload.observation?.id) throw new Error("The server confirmed no observation ID.");
       const candidateCount = payload.candidates ?? 0;
       setExtraEvents((current) => [{
@@ -1612,7 +1847,14 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
       setSourceLink("");
       setInputRequest("idle");
       setInputOpen(false);
-      setToast(uiText(interfaceLocale, `Input recorded. ${candidateCount} candidates created; Canonical models were not changed.`, `입력이 기록되었습니다. 후보 ${candidateCount}개가 생성되었고 Canonical 모델은 변경되지 않았습니다.`));
+      await refreshOperationalState();
+      if (payload.proposalId === pmgSourceIds.proposal) {
+        await loadPatchProposal(payload.proposalId);
+        setPatchOpen(true);
+        setToast(uiText(interfaceLocale, "Source recorded and classified. A human-gated change was proposed; the Current model is unchanged.", "소스가 기록·분류되었습니다. 사람 승인이 필요한 변경안이 생성됐고 Current 모델은 바뀌지 않았습니다."));
+      } else {
+        setToast(uiText(interfaceLocale, `Input recorded. ${candidateCount} candidates created; Canonical models were not changed.`, `입력이 기록되었습니다. 후보 ${candidateCount}개가 생성되었고 Canonical 모델은 변경되지 않았습니다.`));
+      }
     } catch (error) {
       setInputRequest("error");
       setInputError(error instanceof Error ? error.message : "Connection unavailable. The input was not saved.");
@@ -1624,17 +1866,40 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
     setPatchRequest("saving");
     setPatchError("");
     try {
-      const response = await fetch("/api/patch-proposals/patch-reference-014/decision", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ decision }) });
+      const response = await fetch(`/api/patch-proposals/${encodeURIComponent(activeProposalId)}/decision`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ decision }) });
       if (!response.ok) throw new Error(await apiErrorMessage(response));
       const payload = await response.json() as { decision?: typeof decision; applied?: boolean };
       if (payload.decision !== decision) throw new Error("The server did not confirm this decision.");
       setPatchDecision(decision);
       setPatchApplied(payload.applied === true);
       setPatchRequest("idle");
+      await loadPatchProposal(activeProposalId);
+      await refreshOperationalState();
       setToast(decision === "approved" ? `Patch approved · ${payload.applied ? "applied" : "not applied"}` : `Patch decision recorded: ${decision}`);
     } catch (error) {
       setPatchRequest("error");
       setPatchError(error instanceof Error ? error.message : "Connection unavailable. The decision was not recorded.");
+    }
+  };
+
+  const applyPatch = async () => {
+    if (patchRequest === "saving") return;
+    setPatchRequest("saving");
+    setPatchError("");
+    try {
+      const response = await fetch(`/api/patch-proposals/${encodeURIComponent(activeProposalId)}/apply`, { method: "POST", headers: { accept: "application/json" } });
+      if (!response.ok) throw new Error(await apiErrorMessage(response));
+      const payload = await response.json() as { applied?: boolean; revisionId?: string; status?: string };
+      if (!payload.applied || payload.status !== "applied" || !payload.revisionId) throw new Error("The server did not confirm an applied revision.");
+      setPatchApplied(true);
+      setPatchDecision("approved");
+      setPatchRequest("idle");
+      await loadPatchProposal(activeProposalId);
+      await refreshOperationalState();
+      setToast(uiText(interfaceLocale, "Applied. Map, Feed, and Dashboard now read the new revision.", "반영되었습니다. 지도·변경·대시보드가 새 리비전을 함께 읽습니다."));
+    } catch (error) {
+      setPatchRequest("error");
+      setPatchError(error instanceof Error ? error.message : "The approved change was not applied.");
     }
   };
 
@@ -1650,6 +1915,7 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
     { id: "home", label: uiText(interfaceLocale, "Open work entry", "작업 진입 열기"), description: uiText(interfaceLocale, "Continue a draft through the governed input path", "초안을 거버넌스된 입력 경로로 이어가기"), keywords: "home work chat context 작업 홈 대화", glyph: "＋", run: () => setView("home") },
     { id: "map", label: uiText(interfaceLocale, "Open operating map", "운영 지도 열기"), description: uiText(interfaceLocale, "Inspect the recorded graph projection", "기록된 그래프 투영 확인"), keywords: "map graph 지도 그래프", glyph: "⌘", run: () => setView("map") },
     { id: "feed", label: uiText(interfaceLocale, "Open change feed", "변경 피드 열기"), description: uiText(interfaceLocale, "Review recorded revisions and gates", "기록된 리비전과 게이트 검토"), keywords: "feed changes revisions 변경 피드", glyph: "↗", run: () => setView("feed") },
+    { id: "dashboard", label: uiText(interfaceLocale, "Open operational dashboard", "운영 대시보드 열기"), description: uiText(interfaceLocale, "Read D1 counts, source links, integrity, and next action", "D1 수치·소스 연결·무결성·다음 동작 확인"), keywords: "dashboard state source 대시보드 상태 소스", glyph: "▦", run: () => setView("dashboard") },
     { id: "standards", label: uiText(interfaceLocale, "Open OCP standards", "OCP 기준 열기"), description: uiText(interfaceLocale, "Find contracts, status, and language boundaries", "계약·구현 상태·언어 경계 확인"), keywords: "standards contract status 기준 계약 상태", glyph: "§", run: () => setView("standards") },
     { id: "input", label: uiText(interfaceLocale, "Record an input", "입력 기록"), description: uiText(interfaceLocale, "Capture an observation or candidate assertion", "관측 또는 후보 주장 기록"), keywords: "observation input evidence 관측 입력 근거", glyph: "＋", run: openInput },
     { id: "human-gate", label: uiText(interfaceLocale, "Open human-required patch", "사람 승인이 필요한 패치 열기"), description: uiText(interfaceLocale, "Review Reference Model Patch #014", "Reference Model Patch #014 검토"), keywords: "approve review gate 승인 검토", glyph: "!", run: openPatchReview },
@@ -1660,7 +1926,7 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
   ];
 
   return (
-    <main className={`ocp-app ${view === "standards" ? "standards-mode" : view === "home" ? "home-mode" : ""}`} lang={interfaceLocale === "dual" ? "ko" : interfaceLocale}>
+    <main className={`ocp-app ${view === "standards" ? "standards-mode" : view === "home" ? "home-mode" : view === "dashboard" ? "dashboard-mode" : ""}`} lang={interfaceLocale === "dual" ? "ko" : interfaceLocale}>
       <header className="topbar">
         <a className="brand" href="#main-content" aria-label={uiText(interfaceLocale, "OCP work entry home", "OCP 작업 진입 홈")} onClick={() => setView("home")}>
           <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
@@ -1671,6 +1937,7 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
           <button className={view === "home" ? "active" : ""} type="button" aria-pressed={view === "home"} onClick={() => setView("home")}>{interfaceLocale === "en" ? "Work" : "작업"}{interfaceLocale === "dual" && <small>Work</small>}</button>
           <button className={view === "map" ? "active" : ""} type="button" aria-pressed={view === "map"} onClick={() => setView("map")}>{interfaceLocale === "en" ? "Map" : "지도"}{interfaceLocale === "dual" && <small>Map</small>}</button>
           <button className={view === "feed" ? "active" : ""} type="button" aria-pressed={view === "feed"} onClick={() => setView("feed")}>{interfaceLocale === "en" ? "Feed" : "변경"}{interfaceLocale === "dual" && <small>Feed</small>}<i>{events.length}</i></button>
+          <button className={view === "dashboard" ? "active" : ""} type="button" aria-pressed={view === "dashboard"} onClick={() => setView("dashboard")}>{interfaceLocale === "en" ? "Dashboard" : "대시보드"}{interfaceLocale === "dual" && <small>Dashboard</small>}</button>
           <button className={view === "standards" ? "active" : ""} type="button" aria-pressed={view === "standards"} onClick={() => setView("standards")}>{interfaceLocale === "en" ? "Standards" : "기준"}{interfaceLocale === "dual" && <small>Standards</small>}</button>
         </nav>
         <button className="search" type="button" onClick={() => setSearchOpen(true)}><span aria-hidden="true">⌕</span> {uiText(interfaceLocale, "Find objects, views, and actions", "객체·보기·동작 찾기")} <kbd>⌘ K</kbd></button>
@@ -1697,12 +1964,12 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
       {(view === "map" || view === "feed") && <TimelineBar value={timeIndex} onChange={setTimeIndex} recordedIndex={recordedIndex} onRecordedChange={setRecordedIndex} locale={interfaceLocale} />}
 
       {view === "home" ? (
-        <WorkEntryHome locale={interfaceLocale} connection={connection} revision={revision} onCapture={beginWorkCapture} />
+        <WorkEntryHome locale={interfaceLocale} connection={connection} revision={revision} operationalState={operationalState} onCapture={beginWorkCapture} onVerifiedSource={beginVerifiedPmgSource} onOpenDashboard={() => setView("dashboard")} />
       ) : view === "map" ? (
         <div className={`workspace ${inspectorOpen ? "" : "inspector-hidden"}`} id="main-content">
           <ControlRail projection={projection} modelMode={modelMode} perspective={perspective} layers={layers} repLens={repLens} onProjection={chooseProjection} onMode={chooseMode} onPerspective={setPerspective} onLayer={toggleLayer} onRepLens={setRepLens} locale={interfaceLocale} />
           <section className="map" aria-label={`${graph.label} model map in ${modelMode} mode`}>
-            <MapToolbar graph={visibleGraph} projection={projection} modelMode={modelMode} connection={connection} revision={revision} onSelectAgent={openAgent} onOpenPatch={openPatchReview} onFit={() => setZoom(86)} locale={interfaceLocale} />
+            <MapToolbar graph={visibleGraph} projection={projection} modelMode={modelMode} connection={connection} revision={revision} operationalState={operationalState} onSelectAgent={openAgent} onOpenPatch={() => openPatchReview(operationalState ? pmgSourceIds.proposal : "patch-reference-014")} onFit={() => setZoom(86)} locale={interfaceLocale} />
             {modelMode === "single" && <StrataCanvas graph={visibleGraph} selectedId={selectedNode.id} timeIndex={timeIndex} zoom={zoom} onSelect={selectNode} setZoom={setZoom} layers={layers} primaryLayer={primaryLayer} />}
             {modelMode === "split" && <CompareCanvas graph={visibleGraph} selectedId={selectedNode.id} timeIndex={timeIndex} onSelect={selectNode} />}
             {modelMode === "overlay" && <OverlayCanvas graph={visibleGraph} selectedId={selectedNode.id} timeIndex={timeIndex} balance={overlayBalance} zoom={zoom} onSelect={selectNode} setBalance={setOverlayBalance} setZoom={setZoom} layers={layers} primaryLayer={primaryLayer} />}
@@ -1713,11 +1980,13 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
           {!inspectorOpen && <button className="reopen-inspector" type="button" onClick={() => { setInspectorOpen(true); setMobileInspectorEngaged(true); }}>Object details <span>←</span></button>}
         </div>
       ) : view === "feed" ? (
-        <FeedView events={events} filter={feedFilter} onFilter={setFeedFilter} onOpenEvent={openEvent} onOpenPatch={openPatchReview} revision={revision} locale={interfaceLocale} />
+        <FeedView events={events} filter={feedFilter} onFilter={setFeedFilter} onOpenEvent={openEvent} onOpenPatch={() => openPatchReview(operationalState ? pmgSourceIds.proposal : "patch-reference-014")} operationalState={operationalState} revision={revision} locale={interfaceLocale} />
+      ) : view === "dashboard" ? (
+        <DashboardView state={operationalState} connection={connection} locale={interfaceLocale} onOpenPatch={() => openPatchReview(pmgSourceIds.proposal)} onStartSource={beginVerifiedPmgSource} />
       ) : <StandardsView locale={interfaceLocale} />}
 
       <InputDrawer open={inputOpen} type={inputType} observation={observation} stateKind={observationKind} validTime={observationValidTime} sourceFile={sourceFile} sourceLink={sourceLink} onType={setInputType} onObservation={setObservation} onStateKind={setObservationKind} onValidTime={setObservationValidTime} onSourceFile={setSourceFile} onSourceLink={setSourceLink} onClose={() => setInputOpen(false)} onSubmit={saveObservation} requestState={inputRequest} error={inputError} actorLabel={participationLabel(interfaceLocale, participation)} locale={interfaceLocale} />
-      <PatchReviewDrawer open={patchOpen} decision={patchDecision} onClose={() => setPatchOpen(false)} onDecision={decidePatch} requestState={patchRequest} error={patchError} applied={patchApplied} canReview={canReviewPatches(participation)} />
+      <PatchReviewDrawer open={patchOpen} proposal={activeProposal} decision={patchDecision} onClose={() => setPatchOpen(false)} onDecision={decidePatch} onApply={applyPatch} requestState={patchRequest} error={patchError} applied={patchApplied} canReview={canReviewPatches(participation)} applyAvailable={activeProposalId === pmgSourceIds.proposal} locale={interfaceLocale} />
       <CommandPalette open={searchOpen} commands={commands} onOpenObject={openSearchResult} onClose={() => setSearchOpen(false)} locale={interfaceLocale} />
 
       <div className="sr-only" aria-live="polite">{viewSpecs[projection].label} projection, {modeLabels[modelMode].en} mode, valid {timelinePoints[timeIndex].label}, recorded {recordedTimeOptions[recordedIndex].label}</div>

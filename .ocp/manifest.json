@@ -1,5 +1,5 @@
 {
-  "schema": "ocp.harness-manifest/v1",
+  "schema": "ocp.harness-manifest/v2",
   "baseline_id": "OCP-HARNESS-BASELINE-V1",
   "name": "Harness Baseline v1",
   "purpose": "Make implementation and runtime verification reproducible by an independent actor without GitHub or builder-session access.",
@@ -7,7 +7,15 @@
   "current_state": ".ocp/current-state.json",
   "capability_registry": ".ocp/capability-registry.json",
   "runtime_targets": ".ocp/runtime/targets.json",
+  "verification_attestation_schema": ".ocp/verification-attestation.schema.json",
+  "verification_attestation_generator": "scripts/create-verification-attestation.mjs",
+  "golden_path_contract": ".ocp/golden-path-contract.json",
+  "source_manifests": [
+    ".ocp/sources/pmg-ocp-harness-v1.json"
+  ],
   "evidence_root": ".ocp/evidence/runs",
+  "attestation_root": ".ocp/attestations/runs",
+  "attestation_documentation": "docs/OCP-VERIFICATION-ATTESTATION.md",
   "human_documentation": "docs/OCP-HARNESS-BASELINE-V1.md",
   "commands": {
     "verify": "npm run verify",
@@ -34,6 +42,9 @@
     "Capability availability is not execution verification.",
     "Deployment is not runtime verification.",
     "A failed request is never recorded as saved.",
-    "Generated evidence records source and dirty state."
+    "Generated evidence records source and dirty state.",
+    "A verified subject never embeds the final attestation that verifies that same subject.",
+    "An attestation verifies an exact subject commit; the subject commit does not contain that attestation.",
+    "The latest attestation pointer is external operational state."
   ]
 }

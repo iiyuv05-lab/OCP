@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ocp.local/schemas/verification-attestation-v1.json",
+  "title": "OCP Verification Attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "attestation_id", "subject", "source_context", "contract", "execution", "evidence", "verification", "verifier", "provenance", "recorded_at"],
+  "properties": {
+    "schema": { "const": "ocp.verification-attestation/v1" },
+    "attestation_id": { "type": "string", "minLength": 1 },
+    "subject": {
+      "type": "object", "additionalProperties": false, "required": ["type", "repository", "commit"],
+      "properties": {
+        "type": { "const": "git_commit" }, "repository": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "pattern": "^[0-9a-fA-F]{7,64}$" }
+      }
+    },
+    "source_context": {
+      "type": "object", "additionalProperties": false,
+      "required": ["trigger_ref", "head_ref", "head_commit", "base_ref", "base_commit"],
+      "properties": {
+        "trigger_ref": { "type": ["string", "null"] }, "head_ref": { "type": ["string", "null"] },
+        "head_commit": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F]{7,64}$" },
+        "base_ref": { "type": ["string", "null"] },
+        "base_commit": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F]{7,64}$" }
+      }
+    },
+    "contract": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version", "required_stage"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 },
+        "required_stage": { "const": "ACCEPTANCE_VERIFIED" }
+      }
+    },
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "workflow", "run_id", "run_attempt", "event", "result", "verified_at"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 }, "workflow": { "type": "string", "minLength": 1 },
+        "workflow_ref": { "type": ["string", "null"] }, "run_id": { "type": "string", "minLength": 1 },
+        "run_attempt": { "type": "integer", "minimum": 1 }, "event": { "type": "string", "minLength": 1 },
+        "result": { "enum": ["PASS", "FAIL", "ERROR"] }, "verified_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["run_id", "verification_path", "verification_sha256", "primary_artifact"],
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 }, "verification_path": { "type": ["string", "null"] },
+        "verification_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "primary_artifact": {
+          "type": "object", "additionalProperties": false, "required": ["id", "name", "digest", "url"],
+          "properties": {
+            "id": { "type": ["string", "null"] }, "name": { "type": ["string", "null"] },
+            "digest": { "type": ["string", "null"] }, "url": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["stages", "tests", "projects", "viewports", "browser_run_count", "console_errors", "network_failures", "artifact_hashes"],
+      "properties": {
+        "stages": { "type": "array", "items": { "type": "object" } },
+        "tests": { "type": "array", "items": { "type": "object" } },
+        "projects": { "type": "array", "items": { "type": "string" } },
+        "viewports": { "type": "array", "items": { "type": "object" } },
+        "browser_run_count": { "type": "integer", "minimum": 0 }, "console_errors": { "type": "integer", "minimum": 0 },
+        "network_failures": { "type": "integer", "minimum": 0 },
+        "artifact_hashes": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "verifier": {
+      "type": "object", "additionalProperties": false, "required": ["actor_class", "environment"],
+      "properties": { "actor_class": { "type": "string", "minLength": 1 }, "environment": { "type": "object" } }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false, "required": ["generated_by", "non_recursive"],
+      "properties": { "generated_by": { "type": "string", "minLength": 1 }, "non_recursive": { "const": true } }
+    },
+    "recorded_at": { "type": "string", "format": "date-time" }
+  }
+}

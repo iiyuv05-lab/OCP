@@ -74,7 +74,7 @@ function startRuntime() {
   const stageStartedAt = new Date().toISOString();
   const child = spawn(process.execPath, ["scripts/start-runtime.mjs"], {
     cwd: repositoryRoot,
-    env: { ...process.env, OCP_RUNTIME_URL: runtimeUrl },
+    env: { ...process.env, OCP_RUNTIME_URL: runtimeUrl, OCP_RUNTIME_STATE: join(runRoot, "runtime-state") },
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stdout.on("data", (chunk) => {
@@ -161,6 +161,7 @@ try {
     OCP_RUNTIME_TARGET_ID: "ocp-local-runtime",
     OCP_EVIDENCE_RUN_DIR: runRoot,
     OCP_RUN_ID: runId,
+    OCP_ALLOW_SAFE_LOCAL_MUTATIONS: "true",
   });
   if (browser.result !== "PASS") throw new Error("Browser acceptance failed.");
 } catch (error) {
