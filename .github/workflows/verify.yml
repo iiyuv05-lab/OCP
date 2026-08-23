@@ -41,6 +41,10 @@ jobs:
         continue-on-error: true
         env:
           OCP_ATTESTATION_SUBJECT_SHA: ${{ github.sha }}
+          OCP_SOURCE_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          OCP_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          OCP_SOURCE_BASE_REF: ${{ github.base_ref }}
+          OCP_SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           OCP_EVIDENCE_RUN_ID: RUN-GITHUB-${{ github.run_id }}-${{ github.run_attempt }}
           OCP_VERIFICATION_OUTCOME: ${{ steps.verify.outcome }}
           OCP_PRIMARY_EVIDENCE_ARTIFACT_ID: ${{ steps.evidence.outputs.artifact-id }}

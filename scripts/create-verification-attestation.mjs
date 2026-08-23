@@ -24,6 +24,11 @@ function sanitize(value) {
   return String(value).replace(/[^a-zA-Z0-9._-]/g, "-");
 }
 
+function normalizeDigest(value) {
+  const digest = optional(value);
+  return digest && /^[0-9a-f]{64}$/i.test(digest) ? `sha256:${digest.toLowerCase()}` : digest;
+}
+
 const provider = environment("OCP_ATTESTATION_PROVIDER", process.env.GITHUB_ACTIONS ? "github_actions" : "local");
 const executionRunId = environment("GITHUB_RUN_ID", environment("OCP_ATTESTATION_RUN_ID", `local-${Date.now()}`));
 const runAttempt = Number(environment("GITHUB_RUN_ATTEMPT", environment("OCP_ATTESTATION_RUN_ATTEMPT", "1")));
@@ -48,7 +53,12 @@ const executionResult = !verification
   : requestedOutcome === "failure" || requestedOutcome === "cancelled" || verification.result !== "PASS"
     ? "FAIL"
     : "PASS";
-const subjectCommit = environment("OCP_ATTESTATION_SUBJECT_SHA", environment("GITHUB_SHA", git(["rev-parse", "HEAD"], "UNKNOWN")));
+const requestedSubjectCommit = environment("OCP_ATTESTATION_SUBJECT_SHA", environment("GITHUB_SHA", git(["rev-parse", "HEAD"], "UNKNOWN")));
+const verifiedSubjectCommit = optional(verification?.git_commit);
+if (verifiedSubjectCommit && verifiedSubjectCommit !== requestedSubjectCommit) {
+  throw new Error(`Attestation subject ${requestedSubjectCommit} does not match verified Git commit ${verifiedSubjectCommit}.`);
+}
+const subjectCommit = verifiedSubjectCommit ?? requestedSubjectCommit;
 if (!/^[0-9a-f]{7,64}$/i.test(subjectCommit)) {
   throw new Error(`Attestation subject is not a Git commit SHA: ${subjectCommit}`);
 }
@@ -65,6 +75,13 @@ const attestation = {
     type: "git_commit",
     repository: environment("GITHUB_REPOSITORY", environment("OCP_ATTESTATION_REPOSITORY", "local/OCP")),
     commit: subjectCommit,
+  },
+  source_context: {
+    trigger_ref: optional(environment("GITHUB_REF", environment("OCP_SOURCE_TRIGGER_REF"))),
+    head_ref: optional(environment("OCP_SOURCE_HEAD_REF", environment("GITHUB_HEAD_REF", environment("GITHUB_REF_NAME")))),
+    head_commit: optional(environment("OCP_SOURCE_HEAD_SHA", subjectCommit)),
+    base_ref: optional(environment("OCP_SOURCE_BASE_REF", environment("GITHUB_BASE_REF"))),
+    base_commit: optional(environment("OCP_SOURCE_BASE_SHA")),
   },
   contract: {
     id: contract.contract_id,
@@ -88,7 +105,7 @@ const attestation = {
     primary_artifact: {
       id: optional(environment("OCP_PRIMARY_EVIDENCE_ARTIFACT_ID")),
       name: optional(environment("OCP_PRIMARY_EVIDENCE_ARTIFACT_NAME")),
-      digest: optional(environment("OCP_PRIMARY_EVIDENCE_ARTIFACT_DIGEST")),
+      digest: normalizeDigest(environment("OCP_PRIMARY_EVIDENCE_ARTIFACT_DIGEST")),
       url: optional(environment("OCP_PRIMARY_EVIDENCE_ARTIFACT_URL")),
     },
   },

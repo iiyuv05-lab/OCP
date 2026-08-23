@@ -35,6 +35,7 @@ The attestation schema is `.ocp/verification-attestation.schema.json`. `scripts/
 Each attestation binds at least:
 
 - exact repository and Git commit;
+- trigger ref plus PR head/base refs and commits, when applicable;
 - contract ID and version;
 - workflow, run ID, attempt, event, result, and verification time;
 - evidence run, verification-file hash, and primary artifact identity/digest;
@@ -42,6 +43,8 @@ Each attestation binds at least:
 - verifier class, environment, generator, and recorded time.
 
 The attestation artifact does not contain its own artifact ID or digest. Its primary artifact reference points to the evidence bundle, so the attestation can be uploaded after it is generated without another recursive identity problem.
+
+For a pull-request workflow, GitHub normally checks out a synthetic merge ref. That checked-out merge commit is the verification `subject`; the PR branch head and base remain separate `source_context`. The generator rejects an attestation when its requested subject differs from the Git commit recorded by the harness.
 
 ## GitHub Actions protocol
 

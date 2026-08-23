@@ -294,6 +294,7 @@ test("creates a non-recursive attestation for an exact verification subject", as
   const outputRoot = join(temporaryRoot, "attestations");
   await writeFile(verificationPath, `${JSON.stringify({
     run_id: "RUN-TEST-001",
+    git_commit: "1234567890abcdef1234567890abcdef12345678",
     finished_at: "2026-08-23T00:00:00.000Z",
     result: "PASS",
     stages: [{ id: "test", result: "PASS" }],
@@ -317,6 +318,10 @@ test("creates a non-recursive attestation for an exact verification subject", as
         OCP_ATTESTATION_RUN_ID: "42",
         OCP_ATTESTATION_RUN_ATTEMPT: "1",
         OCP_EVIDENCE_RUN_ID: "RUN-TEST-001",
+        OCP_SOURCE_HEAD_REF: "codex/test",
+        OCP_SOURCE_HEAD_SHA: "1234567890abcdef1234567890abcdef12345678",
+        OCP_SOURCE_BASE_REF: "main",
+        OCP_SOURCE_BASE_SHA: "abcdef1234567890abcdef1234567890abcdef12",
         OCP_VERIFICATION_OUTCOME: "success",
         OCP_PRIMARY_EVIDENCE_ARTIFACT_ID: "99",
         OCP_PRIMARY_EVIDENCE_ARTIFACT_DIGEST: "sha256:evidence",
@@ -328,6 +333,8 @@ test("creates a non-recursive attestation for an exact verification subject", as
     assert.equal(attestation.schema, "ocp.verification-attestation/v1");
     assert.equal(attestation.subject.commit, "1234567890abcdef1234567890abcdef12345678");
     assert.equal(attestation.execution.result, "PASS");
+    assert.equal(attestation.source_context.head_ref, "codex/test");
+    assert.equal(attestation.source_context.base_ref, "main");
     assert.equal(attestation.evidence.primary_artifact.id, "99");
     assert.equal(attestation.provenance.non_recursive, true);
     assert.equal(containsKey(attestation.subject, new Set(["attestation_id", "artifact_id", "run_id"])), false);

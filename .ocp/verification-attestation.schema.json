@@ -4,7 +4,7 @@
   "title": "OCP Verification Attestation",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "attestation_id", "subject", "contract", "execution", "evidence", "verification", "verifier", "provenance", "recorded_at"],
+  "required": ["schema", "attestation_id", "subject", "source_context", "contract", "execution", "evidence", "verification", "verifier", "provenance", "recorded_at"],
   "properties": {
     "schema": { "const": "ocp.verification-attestation/v1" },
     "attestation_id": { "type": "string", "minLength": 1 },
@@ -13,6 +13,16 @@
       "properties": {
         "type": { "const": "git_commit" }, "repository": { "type": "string", "minLength": 1 },
         "commit": { "type": "string", "pattern": "^[0-9a-fA-F]{7,64}$" }
+      }
+    },
+    "source_context": {
+      "type": "object", "additionalProperties": false,
+      "required": ["trigger_ref", "head_ref", "head_commit", "base_ref", "base_commit"],
+      "properties": {
+        "trigger_ref": { "type": ["string", "null"] }, "head_ref": { "type": ["string", "null"] },
+        "head_commit": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F]{7,64}$" },
+        "base_ref": { "type": ["string", "null"] },
+        "base_commit": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F]{7,64}$" }
       }
     },
     "contract": {
