@@ -1,45 +1,26 @@
 {
-  "schema": "ocp.runtime-targets/v1",
+  "schema": "ocp.runtime-target-declarations/v2",
   "policy_id": "OCP-RC-002",
+  "state_role": "declared_targets_and_external_snapshots",
+  "attestation_resolution": {
+    "schema_path": ".ocp/verification-attestation.schema.json",
+    "latest_pointer_authority": "external_operational_state",
+    "embedded_latest_pointer": false
+  },
   "canonical_implementation": {
     "kind": "git",
     "repository": "https://github.com/iiyuv05-lab/OCP",
     "default_branch": "main",
-    "state": "github_pr_ci_verified_pending_merge",
-    "note": "PR #1 exists and final GitHub Actions run 32598569839 passed with artifact 9482242652. Main promotion and branch-rule enforcement remain unverified.",
-    "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
-    "head_commit": "4ae35dd0fd23c9c32356eef37a6da160fd37605a",
-    "workflow_run_id": 32598569839
+    "promotion_condition": "A PASS attestation whose subject is the exact current main commit and whose contract stage is ACCEPTANCE_VERIFIED.",
+    "state_authority": "external_operational_state",
+    "embedded_latest_state": false
   },
   "targets": [
     {
-      "id": "ocp-local-runtime",
-      "kind": "local",
-      "lifecycle": "verification",
-      "url_from_env": "OCP_RUNTIME_URL",
-      "verification": {
-        "build_verified": "verified_local_build",
-        "deployable": "not_applicable",
-        "deployed": "not_applicable",
-        "accessible": "verified_local_actor",
-        "interactable": "verified_local_actor",
-        "runtime_verified": "verified_local_actor",
-        "acceptance_verified": "verified_local_actor"
-      },
-      "latest_harness_run": {
-        "started_at": "2026-08-22T23:39:14.037Z",
-        "actor_class": "independent-browser-harness",
-        "projects": ["desktop-chromium", "tablet-chromium", "mobile-chromium"],
-        "interaction": "passed_input_classify_approve_without_apply_apply_map_feed_dashboard",
-        "console_errors": 0,
-        "network_failures": 0,
-        "result": "PASS",
-        "run_id": "RUN-20260823-PMG-001",
-        "source_commit": "28ef14f9c124b5bd710bbb32a2ec555bf3c12ba3",
-        "evidence_path": ".ocp/evidence/runs/RUN-20260823-PMG-001",
-        "screenshots": 25,
-        "dom_snapshots": 25,
-        "artifact_hashes": 173
+      "id": "ocp-local-runtime", "kind": "local", "lifecycle": "verification", "url_from_env": "OCP_RUNTIME_URL",
+      "expected_verification": {
+        "contract_id": "OCP-VERIFY-001", "command": "npm run verify", "required_stage": "ACCEPTANCE_VERIFIED",
+        "required_result": "PASS", "actor_class": "independent-browser-harness", "attestation_required": true
       }
     },
     {
@@ -47,71 +28,43 @@
       "kind": "prototype_snapshot",
       "provider": "chatgpt_sites",
       "lifecycle": "frozen",
+      "record_role": "historical_external_target_observation",
       "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/",
       "project_id": "appgprj_6a88d738a828819183fbf7193f9c8200",
       "deployment_id": "appgdep_6a88db4987688191bad1c5c6401141e6",
       "version_id": "appgprj_6a88d738a828819183fbf7193f9c8200~appgver_07e8b9b340848191b23fe53b735ae242",
       "source_commit": "bdb42368933115d617e6478b6e8cad1d10a6f690",
-      "verification": {
-        "build_verified": "verified_by_provider",
-        "deployable": "verified_by_provider",
-        "deployed": "verified_by_provider",
-        "accessible": "environment_dependent",
-        "interactable": "environment_dependent",
-        "publicly_indexed": "failed_no_result_current_verifier",
-        "agent_accessible": "failed_current_verifier",
-        "remote_runtime_testable": "failed_current_verifier",
-        "independently_verified": "failed",
-        "runtime_verified": "failed_implementation_deployment_drift",
-        "acceptance_verified": "not_run"
+      "observed_state": {
+        "build_verified": "verified_by_provider", "deployable": "verified_by_provider", "deployed": "verified_by_provider",
+        "accessible": "environment_dependent", "interactable": "environment_dependent",
+        "publicly_indexed": "failed_no_result_current_verifier", "agent_accessible": "failed_current_verifier",
+        "remote_runtime_testable": "failed_current_verifier", "independently_verified": "failed",
+        "runtime_verified": "failed_implementation_deployment_drift", "acceptance_verified": "not_run"
       },
       "failure_cases": ["CASE-RUNTIME-001", "CASE-RUNTIME-002"],
       "actor_scoped_access": [
+        { "actor_class": "user-browser", "state": "observed_accessible", "provenance": "user_report" },
+        { "actor_class": "independent-browser-harness", "state": "previously_accessible_but_acceptance_failed", "provenance": ".ocp/runtime/evidence/CASE-RUNTIME-001" },
         {
-          "actor_class": "user-browser",
-          "state": "observed_accessible",
-          "provenance": "user_report"
-        },
-        {
-          "actor_class": "independent-browser-harness",
-          "state": "previously_accessible_but_acceptance_failed",
-          "provenance": ".ocp/runtime/evidence/CASE-RUNTIME-001"
-        },
-        {
-          "actor_class": "current-independent-verifier",
-          "state": "inaccessible",
+          "actor_class": "current-independent-verifier", "state": "inaccessible",
           "observed_failures": ["external_fetch_cache_miss", "runtime_dns_resolution_failed", "search_index_no_result"],
-          "recorded_at": "2026-08-23",
-          "provenance": "user_report"
+          "recorded_at": "2026-08-23", "provenance": "user_report"
         }
       ],
-      "latest_harness_run": {
-        "started_at": "2026-08-22T08:56:43.931Z",
-        "actor_class": "independent-browser-harness",
-        "projects": ["desktop-chromium", "mobile-chromium"],
-        "fetch": "passed",
-        "interaction": "passed_through_standards_navigation",
-        "console_errors": 0,
-        "network_failures": 0,
-        "result": "FAIL",
-        "reason": "deployed snapshot does not contain the OCP-RC-002 Standards marker from the tested implementation",
+      "historical_verification_snapshot": {
+        "started_at": "2026-08-22T08:56:43.931Z", "actor_class": "independent-browser-harness",
+        "projects": ["desktop-chromium", "mobile-chromium"], "fetch": "passed",
+        "interaction": "passed_through_standards_navigation", "console_errors": 0, "network_failures": 0,
+        "result": "FAIL", "reason": "The deployed snapshot did not contain the OCP-RC-002 Standards marker from the tested implementation.",
         "evidence_path": ".ocp/runtime/evidence/CASE-RUNTIME-001"
       }
     },
     {
-      "id": "ocp-external-preview",
-      "kind": "pull_request_preview",
-      "lifecycle": "required",
-      "provider": null,
+      "id": "ocp-external-preview", "kind": "pull_request_preview", "lifecycle": "required", "provider": null,
       "url_from_event": "deployment_status.environment_url",
-      "verification": {
-        "build_verified": "not_run",
-        "deployable": "blocked_missing_provider",
-        "deployed": "not_run",
-        "accessible": "not_run",
-        "interactable": "not_run",
-        "runtime_verified": "not_run",
-        "acceptance_verified": "not_run"
+      "expected_verification": {
+        "contract_id": "OCP-VERIFY-001", "required_stage": "ACCEPTANCE_VERIFIED",
+        "required_result": "PASS", "current_readiness": "BLOCKED_MISSING_PROVIDER"
       }
     }
   ]

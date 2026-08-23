@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { access, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 const templateRoot = new URL("../", import.meta.url);
+
+function containsKey(value, forbiddenKeys) {
+  if (!value || typeof value !== "object") return false;
+  if (Array.isArray(value)) return value.some((item) => containsKey(item, forbiddenKeys));
+  return Object.entries(value).some(([key, nested]) => forbiddenKeys.has(key) || containsKey(nested, forbiddenKeys));
+}
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -146,7 +155,7 @@ test("registers the integrity harness and its first repository slice without cla
   assert.match(specification, /first repository\/runtime-test slice implemented/i);
   assert.match(specification, /Coverage percentages are prohibited/);
   assert.match(referenceIndex, /Approved module specification/);
-  assert.match(statusLedger, /Harness Baseline v1 local and PR execution verified/);
+  assert.match(statusLedger, /External-attestation producer implemented/);
   assert.doesNotMatch(statusLedger, /Context Integrity & Runtime Verification Harness \| Implemented/);
 });
 
@@ -171,12 +180,13 @@ test("records deployment truth and runs independent-browser evidence through OCP
   assert.match(constraint, /BUILD_VERIFIED[\s\S]*DEPLOYABLE[\s\S]*DEPLOYED[\s\S]*ACCESSIBLE[\s\S]*INTERACTABLE[\s\S]*RUNTIME_VERIFIED[\s\S]*ACCEPTANCE_VERIFIED/);
   assert.match(constraint, /CASE-RUNTIME-001/);
   assert.equal(manifest.policy_id, "OCP-RC-002");
-  assert.equal(manifest.canonical_implementation.state, "github_pr_ci_verified_pending_merge");
-  assert.equal(manifest.targets.find((target) => target.id === "ocp-local-runtime").verification.runtime_verified, "verified_local_actor");
-  assert.equal(manifest.targets.find((target) => target.id === "ocp-local-runtime").latest_harness_run.result, "PASS");
+  assert.equal(manifest.schema, "ocp.runtime-target-declarations/v2");
+  assert.equal(manifest.canonical_implementation.embedded_latest_state, false);
+  assert.equal(manifest.canonical_implementation.state_authority, "external_operational_state");
+  assert.equal(manifest.targets.find((target) => target.id === "ocp-local-runtime").expected_verification.attestation_required, true);
   assert.equal(manifest.targets.find((target) => target.id === "ocp-sites-v05-snapshot").lifecycle, "frozen");
-  assert.equal(manifest.targets.find((target) => target.id === "ocp-sites-v05-snapshot").verification.runtime_verified, "failed_implementation_deployment_drift");
-  assert.equal(manifest.targets.find((target) => target.id === "ocp-sites-v05-snapshot").latest_harness_run.result, "FAIL");
+  assert.equal(manifest.targets.find((target) => target.id === "ocp-sites-v05-snapshot").observed_state.runtime_verified, "failed_implementation_deployment_drift");
+  assert.equal(manifest.targets.find((target) => target.id === "ocp-sites-v05-snapshot").historical_verification_snapshot.result, "FAIL");
   assert.match(runtimeTest, /captureDom/);
   assert.match(runtimeTest, /console\.json/);
   assert.match(runtimeTest, /network\.json/);
@@ -195,7 +205,7 @@ test("records deployment truth and runs independent-browser evidence through OCP
   assert.match(deploymentWorkflow, /OCP_RUNTIME_URL/);
   assert.match(referenceIndex, /deploymentVerificationStages/);
   assert.match(referenceIndex, /environment-dependent/);
-  assert.match(statusLedger, /Runtime Observability Independence \| Baseline and PMG Golden Path local\/PR execution verified/);
+  assert.match(statusLedger, /Runtime Observability Independence \| Baseline and PMG Golden Path harness implemented; execution is subject-scoped/);
   assert.doesNotMatch(statusLedger, /Runtime Observability Independence \| Implemented/);
 });
 
@@ -220,48 +230,110 @@ test("keeps the new work entry honest about unconnected capabilities", async () 
   assert.match(styles, /\.home-workspace/);
 });
 
-test("defines Harness Baseline v1 as a machine-readable and locally executable contract", async () => {
-  const [manifestText, contractText, currentStateText, capabilitiesText, verifier, healthcheck, previewWorkflow, pullRequestTemplate, codeowners, harnessDocument] = await Promise.all([
+test("defines Harness Baseline v1 as declared state with external verification attestations", async () => {
+  const [manifestText, contractText, currentStateText, capabilitiesText, attestationSchemaText, attestationGenerator, verifier, healthcheck, verifyWorkflow, previewWorkflow, pullRequestTemplate, codeowners, harnessDocument, attestationDocument] = await Promise.all([
     readFile(new URL("../.ocp/manifest.json", import.meta.url), "utf8"),
     readFile(new URL("../.ocp/verification-contract.json", import.meta.url), "utf8"),
     readFile(new URL("../.ocp/current-state.json", import.meta.url), "utf8"),
     readFile(new URL("../.ocp/capability-registry.json", import.meta.url), "utf8"),
+    readFile(new URL("../.ocp/verification-attestation.schema.json", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/create-verification-attestation.mjs", import.meta.url), "utf8"),
     readFile(new URL("../scripts/verify.mjs", import.meta.url), "utf8"),
     readFile(new URL("../scripts/healthcheck.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8"),
     readFile(new URL("../.github/workflows/preview.yml", import.meta.url), "utf8"),
     readFile(new URL("../.github/pull_request_template.md", import.meta.url), "utf8"),
     readFile(new URL("../.github/CODEOWNERS", import.meta.url), "utf8"),
     readFile(new URL("../docs/OCP-HARNESS-BASELINE-V1.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/OCP-VERIFICATION-ATTESTATION.md", import.meta.url), "utf8"),
   ]);
   const manifest = JSON.parse(manifestText);
   const contract = JSON.parse(contractText);
   const currentState = JSON.parse(currentStateText);
   const capabilities = JSON.parse(capabilitiesText);
+  const attestationSchema = JSON.parse(attestationSchemaText);
 
   assert.equal(manifest.baseline_id, "OCP-HARNESS-BASELINE-V1");
   assert.deepEqual(manifest.state_ladder, ["DECLARED", "IMPLEMENTED", "BUILD_VERIFIED", "DEPLOYABLE", "DEPLOYED", "ACCESSIBLE", "INTERACTABLE", "RUNTIME_VERIFIED", "ACCEPTANCE_VERIFIED", "OUTCOME_OBSERVED"]);
   assert.deepEqual(contract.required_routes.map((route) => route.path), ["/", "/map", "/feed", "/dashboard", "/standards"]);
   assert.deepEqual(contract.required_viewports.map((viewport) => viewport.id), ["desktop", "tablet", "mobile"]);
   assert.ok(contract.evidence_requirements.includes("artifact_hashes"));
-  assert.equal(currentState.features.find((feature) => feature.id === "main-llm").implementation, "PARTIAL");
-  assert.equal(currentState.features.find((feature) => feature.id === "dashboard").implementation, "IMPLEMENTED");
-  assert.equal(currentState.features.find((feature) => feature.id === "pmg-source-golden-path").latest_verified_stage, "ACCEPTANCE_VERIFIED");
-  assert.equal(currentState.golden_path.latest_run_id, "RUN-20260823-PMG-001");
-  assert.equal(currentState.golden_path.source_commit, "28ef14f9c124b5bd710bbb32a2ec555bf3c12ba3");
-  assert.equal(currentState.golden_path.github_execution.workflow_run_id, 32607703300);
-  assert.equal(currentState.golden_path.github_execution.result, "SUCCESS");
-  assert.equal(currentState.baseline.latest_stage, "ACCEPTANCE_VERIFIED");
-  assert.equal(currentState.baseline.latest_run_id, "RUN-20260823-001");
-  assert.equal(capabilities.capabilities[0].targets.canonical_candidate, "iiyuv05-lab/OCP");
-  assert.equal(capabilities.capabilities[0].operations.PULL_REQUEST.execution, "VERIFIED");
-  assert.equal(capabilities.capabilities[0].operations.ACTIONS.execution, "VERIFIED");
+  assert.ok(contract.attestation_requirements.includes("subject.commit"));
+  assert.equal(currentState.schema, "ocp.declared-state/v2");
+  assert.equal(currentState.attestation_resolution.latest_pointer_embedded, false);
+  assert.equal(currentState.features.find((feature) => feature.id === "main-llm").implementation_state, "PARTIAL");
+  assert.equal(currentState.features.find((feature) => feature.id === "dashboard").implementation_state, "IMPLEMENTED");
+  assert.equal(currentState.features.find((feature) => feature.id === "pmg-source-golden-path").expected_verification.stage, "ACCEPTANCE_VERIFIED");
+  assert.equal(currentState.golden_path.expected_verification.attestation_required, true);
+  assert.equal(currentState.baseline.expected_verification.required_result, "PASS");
+  assert.equal(containsKey(currentState, new Set(["latest_run_id", "workflow_run_id", "artifact_id", "artifact_digest", "github_execution"])), false);
+  assert.equal(attestationSchema.properties.subject.properties.commit.pattern, "^[0-9a-fA-F]{7,64}$");
+  assert.equal(capabilities.embedded_latest_execution, false);
+  assert.equal(capabilities.capabilities[0].targets.canonical_repository, "iiyuv05-lab/OCP");
+  assert.equal(capabilities.capabilities[0].operations.PULL_REQUEST.execution_resolution, "provider_observation");
+  assert.equal(capabilities.capabilities[0].operations.ACTIONS.execution_resolution, "exact_subject_verification_attestation");
+  assert.equal(containsKey(capabilities, new Set(["workflow_run_id", "artifact_id", "artifact_digest", "head_commit"])), false);
   assert.match(verifier, /artifactHashes/);
   assert.match(verifier, /npmCommand, \["test"\]/);
+  assert.match(attestationGenerator, /attestation_verifies_subject|non_recursive|OCP_ATTESTATION_SUBJECT_SHA/);
   assert.match(healthcheck, /required_routes/);
+  assert.match(verifyWorkflow, /OCP_PRIMARY_EVIDENCE_ARTIFACT_DIGEST/);
+  assert.match(verifyWorkflow, /ocp-attestation-/);
+  assert.match(verifyWorkflow, /Preserve verification failure/);
   assert.match(previewWorkflow, /workflow_dispatch/);
   assert.match(pullRequestTemplate, /Approved and applied remain separate/);
   assert.match(codeowners, /@iiyuv05-lab/);
   assert.match(harnessDocument, /Connection existence ≠ Capability availability ≠ Execution verification/);
+  assert.match(attestationDocument, /V verifies A/);
+  assert.match(attestationDocument, /Latest verified pointer/);
+});
+
+test("creates a non-recursive attestation for an exact verification subject", async () => {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "ocp-attestation-test-"));
+  const verificationPath = join(temporaryRoot, "verification.json");
+  const outputRoot = join(temporaryRoot, "attestations");
+  await writeFile(verificationPath, `${JSON.stringify({
+    run_id: "RUN-TEST-001",
+    finished_at: "2026-08-23T00:00:00.000Z",
+    result: "PASS",
+    stages: [{ id: "test", result: "PASS" }],
+    browser_runs: [{ browser: { project: "desktop-chromium" }, viewport: { width: 1440, height: 900 } }],
+    observed: { browser_run_count: 1, console_errors: 0, network_failures: 0 },
+    artifact_hashes: { "build.log": "abc123" },
+    environment: { platform: "test", ci: true },
+  }, null, 2)}\n`, "utf8");
+
+  try {
+    const result = spawnSync(process.execPath, [new URL("../scripts/create-verification-attestation.mjs", import.meta.url).pathname], {
+      cwd: new URL("../", import.meta.url),
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        OCP_VERIFICATION_PATH: verificationPath,
+        OCP_ATTESTATION_OUTPUT_DIR: outputRoot,
+        OCP_ATTESTATION_PROVIDER: "github_actions",
+        OCP_ATTESTATION_REPOSITORY: "iiyuv05-lab/OCP",
+        OCP_ATTESTATION_SUBJECT_SHA: "1234567890abcdef1234567890abcdef12345678",
+        OCP_ATTESTATION_RUN_ID: "42",
+        OCP_ATTESTATION_RUN_ATTEMPT: "1",
+        OCP_EVIDENCE_RUN_ID: "RUN-TEST-001",
+        OCP_VERIFICATION_OUTCOME: "success",
+        OCP_PRIMARY_EVIDENCE_ARTIFACT_ID: "99",
+        OCP_PRIMARY_EVIDENCE_ARTIFACT_DIGEST: "sha256:evidence",
+      },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const [file] = await readdir(outputRoot);
+    const attestation = JSON.parse(await readFile(join(outputRoot, file), "utf8"));
+    assert.equal(attestation.schema, "ocp.verification-attestation/v1");
+    assert.equal(attestation.subject.commit, "1234567890abcdef1234567890abcdef12345678");
+    assert.equal(attestation.execution.result, "PASS");
+    assert.equal(attestation.evidence.primary_artifact.id, "99");
+    assert.equal(attestation.provenance.non_recursive, true);
+    assert.equal(containsKey(attestation.subject, new Set(["attestation_id", "artifact_id", "run_id"])), false);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
 });
 
 test("defines the PMG implementation-source Golden Path without collapsing approval into apply", async () => {

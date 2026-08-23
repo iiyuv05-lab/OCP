@@ -1,63 +1,59 @@
 {
-  "schema": "ocp.capability-registry/v1",
+  "schema": "ocp.capability-registry/v2",
+  "state_role": "declared_capabilities_and_external_observation_rules",
   "rule": "Connection existence != Capability availability != Execution verification",
+  "execution_state_authority": "external_operational_state",
+  "embedded_latest_execution": false,
   "capabilities": [
     {
       "id": "github",
       "connection": {
-        "state": "CONNECTED",
+        "declared_state": "CONNECTED",
         "account": "iiyuv05-lab",
-        "last_verified": "2026-08-23",
-        "evidence": "GitHub connector returned the authenticated profile and one accessible repository."
+        "historical_observation": {
+          "recorded_at": "2026-08-23",
+          "evidence": "The GitHub connector returned the authenticated profile and an accessible repository."
+        }
       },
       "targets": {
-        "accessible_repository_count": 1,
-        "canonical_candidate": "iiyuv05-lab/OCP",
+        "canonical_repository": "iiyuv05-lab/OCP",
         "url": "https://github.com/iiyuv05-lab/OCP",
-        "permissions": [
-          "admin",
-          "maintain",
-          "pull",
-          "push",
-          "triage"
-        ]
+        "required_permissions": ["pull", "push"],
+        "availability_resolution": "query_provider_for_current_actor_and_exact_target"
       },
       "operations": {
         "READ": {
-          "availability": "AVAILABLE",
-          "execution": "VERIFIED"
+          "declared_availability": "AVAILABLE",
+          "execution_resolution": "provider_observation"
         },
         "WRITE": {
-          "availability": "AVAILABLE",
-          "execution": "VERIFIED_VIA_CONNECTOR",
-          "note": "GitHub Git Data writes created the source tree and branch. Local HTTPS push remains unavailable because this checkout has no GitHub credential."
+          "declared_availability": "AVAILABLE",
+          "execution_resolution": "provider_observation",
+          "note": "Connector and local transport capabilities are separately observed; one does not imply the other."
         },
         "CREATE_REPOSITORY": {
-          "availability": "UNAVAILABLE_IN_CONNECTOR",
-          "execution": "NOT_APPLICABLE"
+          "declared_availability": "UNAVAILABLE_IN_CONNECTOR",
+          "execution_resolution": "NOT_APPLICABLE"
         },
         "PULL_REQUEST": {
-          "availability": "AVAILABLE",
-          "execution": "VERIFIED",
-          "evidence": "https://github.com/iiyuv05-lab/OCP/pull/1"
+          "declared_availability": "AVAILABLE",
+          "execution_resolution": "provider_observation",
+          "historical_evidence": "https://github.com/iiyuv05-lab/OCP/pull/1"
         },
         "ACTIONS": {
-          "availability": "AVAILABLE",
-          "execution": "VERIFIED",
-          "workflow_run_id": 32598246321,
-          "result": "SUCCESS",
-          "artifact_id": 9482159491,
-          "artifact_name": "ocp-harness-32598246321",
-          "artifact_digest": "sha256:8a2562137edc132596634162b2239d9b45879a825a670a68239a88ee0407a376"
+          "declared_availability": "AVAILABLE",
+          "execution_resolution": "exact_subject_verification_attestation",
+          "attestation_schema": ".ocp/verification-attestation.schema.json",
+          "embedded_latest_execution": false
         }
       },
       "canonical_source": {
-        "state": "ESTABLISHED_PR_PENDING_MERGE",
+        "kind": "git_branch",
+        "repository": "https://github.com/iiyuv05-lab/OCP.git",
         "default_branch": "main",
-        "remote": "https://github.com/iiyuv05-lab/OCP.git",
-        "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
-        "head_branch": "codex/harness-baseline-v1",
-        "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7"
+        "promotion_condition": "The exact current main commit has an external PASS attestation at ACCEPTANCE_VERIFIED.",
+        "state_authority": "external_operational_state",
+        "embedded_latest_state": false
       }
     }
   ]

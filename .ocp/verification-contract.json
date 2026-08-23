@@ -2,7 +2,7 @@
   "schema": "ocp.verification-contract/v1",
   "contract_id": "OCP-VERIFY-001",
   "baseline_id": "OCP-HARNESS-BASELINE-V1",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "commands": {
     "build": "npm run build",
     "start": "npm run start:runtime",
@@ -108,7 +108,9 @@
     "dom": "dom/",
     "console": "console.json",
     "network": "network.json",
-    "verification": "verification.json"
+    "verification": "verification.json",
+    "attestation_root": ".ocp/attestations/runs/",
+    "attestation": "<provider>-<execution_run_id>-attempt-<run_attempt>.json"
   },
   "evidence_requirements": [
     "run_id",
@@ -126,5 +128,21 @@
     "observed",
     "result",
     "artifact_hashes"
+  ],
+  "attestation_requirements": [
+    "subject.commit",
+    "contract.id",
+    "contract.version",
+    "execution.workflow",
+    "execution.run_id",
+    "execution.result",
+    "evidence.verification_sha256",
+    "evidence.primary_artifact.digest",
+    "verification.projects",
+    "verification.viewports",
+    "verification.console_errors",
+    "verification.network_failures",
+    "verifier.actor_class",
+    "recorded_at"
   ]
 }

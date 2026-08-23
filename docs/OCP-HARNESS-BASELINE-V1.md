@@ -2,7 +2,7 @@
 
 Contract ID: `OCP-VERIFY-001`
 
-Status: local acceptance verified by `RUN-20260823-001` · GitHub PR run `32598246321` succeeded with artifact `9482159491` · merge enforcement pending
+Status: verification and external-attestation producer implemented; the result for any exact commit is resolved from its external attestation
 
 ## Purpose
 
@@ -15,16 +15,20 @@ Contract → State Ladder → Build → Runtime → Browser Test
 
 Verification never mutates a Canonical model directly. A passed run is evidence for a later state update, not an automatic product-state promotion.
 
+The repository declares the verification it expects. It does not embed the final run that verifies its own commit. CI emits a separate attestation whose subject is the exact commit, and external operational state owns the latest acceptable attestation pointer.
+
 ## Machine entry points
 
 | Purpose | Path |
 | --- | --- |
 | Harness manifest | `.ocp/manifest.json` |
 | Verification contract | `.ocp/verification-contract.json` |
-| Current implementation state | `.ocp/current-state.json` |
+| Declared/expected implementation state | `.ocp/current-state.json` |
 | Capability registry | `.ocp/capability-registry.json` |
 | Runtime targets | `.ocp/runtime/targets.json` |
 | Executed run evidence | `.ocp/evidence/runs/<run_id>/` |
+| Verification Attestation schema | `.ocp/verification-attestation.schema.json` |
+| External Attestation protocol | `docs/OCP-VERIFICATION-ATTESTATION.md` |
 
 The single local entry point is `npm run verify`. It runs lint, the production build and source tests, a built Worker with isolated D1/R2 state, a health check, and the browser acceptance suite.
 
@@ -63,6 +67,8 @@ Each feature owns its own state. Partial implementation is not runtime verificat
 
 The bundle records run ID, Git commit and dirty state, timestamps, runtime URL, browser, viewport, test version, environment, actions, expected and observed results, final result, and SHA-256 hashes. A failure remains evidence and exits the command unsuccessfully.
 
+CI additionally produces `.ocp/attestations/runs/<provider>-<run>-attempt-<attempt>.json`. The attestation binds the exact subject commit to the verification result and evidence artifact digest without modifying the subject.
+
 ## GitHub boundary
 
 The repository can carry workflow files, a PR template, and CODEOWNERS before the workflow has ever run. Those files make the workflow specification `IMPLEMENTED`; only an actual PR and Actions run can make GitHub execution verified.
@@ -72,6 +78,8 @@ Connection existence ≠ Capability availability ≠ Execution verification
 ```
 
 PR #1 executed the Harness Baseline workflow successfully and preserved its CI artifact. Branch protection, required checks, CODEOWNERS enforcement, preview deployment, and production promotion remain separate capabilities and retain `NOT RUN` or `BLOCKED` until independently observed.
+
+That historical run verifies its historical head only. The current status of a later head is never inferred from it and is never copied into `.ocp/current-state.json`; it must be resolved from an attestation for the later head.
 
 ## Failure and rollback
 

@@ -1,37 +1,40 @@
 {
-  "schema": "ocp.harness-current-state/v1",
+  "schema": "ocp.declared-state/v2",
   "baseline_id": "OCP-HARNESS-BASELINE-V1",
-  "recorded_at": "2026-08-22T23:39:57.469Z",
-  "recorded_time_basis": "UTC",
+  "state_role": "declared_and_expected_state",
+  "recorded_at": "2026-08-23",
+  "recorded_time_basis": "Asia/Seoul",
   "state_ladder": [
-    "DECLARED",
-    "IMPLEMENTED",
-    "BUILD_VERIFIED",
-    "DEPLOYABLE",
-    "DEPLOYED",
-    "ACCESSIBLE",
-    "INTERACTABLE",
-    "RUNTIME_VERIFIED",
-    "ACCEPTANCE_VERIFIED",
-    "OUTCOME_OBSERVED"
+    "DECLARED", "IMPLEMENTED", "BUILD_VERIFIED", "DEPLOYABLE", "DEPLOYED",
+    "ACCESSIBLE", "INTERACTABLE", "RUNTIME_VERIFIED", "ACCEPTANCE_VERIFIED", "OUTCOME_OBSERVED"
   ],
+  "self_reference_policy": {
+    "rule": "A verified subject must not embed the final verification attestation that verifies that same subject.",
+    "relationship": "attestation_verifies_subject",
+    "forbidden_relationship": "subject_contains_its_final_attestation",
+    "operational_pointer_authority": "external_operational_state"
+  },
+  "attestation_resolution": {
+    "schema_path": ".ocp/verification-attestation.schema.json",
+    "generator_path": "scripts/create-verification-attestation.mjs",
+    "subject": "current_git_commit",
+    "store": "github_actions_artifact",
+    "lookup_template": "github-actions://{repository}/actions/runs?head_sha={commit_sha}",
+    "latest_pointer_embedded": false
+  },
   "baseline": {
-    "latest_stage": "ACCEPTANCE_VERIFIED",
-    "result": "PASS_LOCAL_COMMITTED_SOURCE",
-    "latest_run_id": "RUN-20260823-001",
-    "source_commit": "9b687d2aa3f138c51155117862b1cf814adcf977",
-    "evidence_path": ".ocp/evidence/runs/RUN-20260823-001",
-    "github_execution": {
-      "state": "ACCEPTANCE_VERIFIED",
-      "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
-      "head_commit": "4ae35dd0fd23c9c32356eef37a6da160fd37605a",
-      "workflow_run_id": 32598569839,
-      "result": "SUCCESS",
-      "artifact_id": 9482242652,
-      "artifact_digest": "sha256:849f6c5977e28ea03c2c623af3bf90e94439c931494ba08b3b9f145a97b23e7b"
+    "contract_id": "OCP-VERIFY-001",
+    "implementation_state": "IMPLEMENTED",
+    "expected_verification": {
+      "subject_type": "git_commit",
+      "stage": "ACCEPTANCE_VERIFIED",
+      "command": "npm run verify",
+      "required_result": "PASS",
+      "attestation_required": true
     }
   },
   "runtime_observability": {
+    "record_role": "external_target_snapshot",
     "target_id": "ocp-sites-v05-snapshot",
     "deployed": true,
     "user_accessible": true,
@@ -40,86 +43,50 @@
     "remote_runtime_testable_current_verifier": false,
     "independently_verified": false,
     "failure_case": "CASE-RUNTIME-002",
-    "note": "Actor-scoped accessibility does not promote this target beyond DEPLOYED. A user-reported external fetch cache miss, DNS resolution failure, and empty search index were recorded separately from prior local harness evidence."
+    "note": "Actor-scoped accessibility does not promote this frozen target beyond DEPLOYED. This historical target observation is not the verification state of the current repository commit."
   },
   "golden_path": {
     "contract_id": "OCP-GP-PMG-001",
-    "latest_stage": "ACCEPTANCE_VERIFIED",
-    "result": "PASS_LOCAL_COMMITTED_SOURCE",
-    "latest_run_id": "RUN-20260823-PMG-001",
-    "source_commit": "28ef14f9c124b5bd710bbb32a2ec555bf3c12ba3",
-    "evidence_path": ".ocp/evidence/runs/RUN-20260823-PMG-001",
-    "runtime": {
-      "actor_class": "independent-browser-harness",
-      "viewports": [
-        "desktop-chromium",
-        "tablet-chromium",
-        "mobile-chromium"
-      ],
-      "screenshots": 25,
-      "dom_snapshots": 25,
-      "console_errors": 0,
-      "network_failures": 0,
-      "artifact_hashes": 173
+    "implementation_state": "IMPLEMENTED",
+    "expected_verification": {
+      "subject_type": "git_commit",
+      "stage": "ACCEPTANCE_VERIFIED",
+      "command": "npm run verify",
+      "required_result": "PASS",
+      "attestation_required": true,
+      "required_viewports": ["desktop", "tablet", "mobile"]
     },
-    "observed_transition": {
-      "before_approval": "pending=1; applied_sources=0; head=revision-v03-pmg",
-      "after_approval": "approved_not_applied=1; applied_sources=0; head unchanged",
-      "after_apply": "applied_sources=1; head revision advanced; Map/Feed/Dashboard read the relation"
-    },
-    "github_execution": {
-      "state": "ACCEPTANCE_VERIFIED",
-      "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/2",
-      "verified_source_commit": "a5f2d69cd7b2ddd8232bbc9ef7f4e97afab3e100",
-      "workflow_run_id": 32607703300,
-      "result": "SUCCESS",
-      "artifact_id": 9484601501,
-      "artifact_name": "ocp-harness-32607703300",
-      "artifact_size_bytes": 13624998,
-      "artifact_digest": "sha256:aa632718cc8e18569776a489d580e836b399edf1074692129c9f6d3ee8cda834"
-    },
-    "boundary": "The applied relation is candidate_pr_pending_merge. It does not claim that PR #1 is merged or that the external Sites runtime contains this source."
+    "truth_rules": [
+      "Observation ingestion does not change the Current or Reference model.",
+      "Approval and application remain separate patch states.",
+      "Map, Feed, and Dashboard must read the same applied relation and revision.",
+      "Candidate PR evidence does not imply that the PR is merged or deployed."
+    ]
   },
   "features": [
     {
-      "id": "main-llm",
-      "label": "Main LLM",
-      "implementation": "PARTIAL",
-      "latest_verified_stage": "DECLARED",
-      "runtime_verified": false,
+      "id": "main-llm", "label": "Main LLM", "implementation_state": "PARTIAL", "expected_verification": null,
       "note": "The Work surface exists, but no assistant or context-loader adapter is connected."
     },
     {
-      "id": "map",
-      "label": "Map",
-      "implementation": "IMPLEMENTED",
-      "latest_verified_stage": "RUNTIME_VERIFIED",
-      "runtime_verified": true,
-      "note": "The local independent harness verifies the fixture-backed projection and a D1-backed applied-source indicator. The graph objects and geometry remain fixture/projector output; this does not claim a full D1-backed Canonical Graph projection."
+      "id": "map", "label": "Map", "implementation_state": "IMPLEMENTED",
+      "expected_verification": { "contract_id": "OCP-VERIFY-001", "stage": "RUNTIME_VERIFIED" },
+      "note": "The contract verifies the fixture-backed projection and D1-backed applied-source indicator. It does not declare a full D1-backed Canonical Graph projection."
     },
     {
-      "id": "dashboard",
-      "label": "Dashboard",
-      "implementation": "IMPLEMENTED",
-      "latest_verified_stage": "ACCEPTANCE_VERIFIED",
-      "runtime_verified": true,
-      "note": "RUN-20260823-PMG-001 verifies the first operational Dashboard reading observation, proposal, applied-source, bitemporal, and revision values from D1 at three viewports. Broader topic and outcome projections remain unimplemented."
+      "id": "dashboard", "label": "Dashboard", "implementation_state": "IMPLEMENTED",
+      "expected_verification": { "contract_id": "OCP-GP-PMG-001", "stage": "ACCEPTANCE_VERIFIED" },
+      "note": "The contract requires Dashboard to read observation, proposal, applied-source, bitemporal, and revision values from D1. Broader topic and outcome projections remain unimplemented."
     },
     {
-      "id": "pmg-source-golden-path",
-      "label": "PMG implementation-source Golden Path",
-      "implementation": "IMPLEMENTED",
-      "latest_verified_stage": "ACCEPTANCE_VERIFIED",
-      "runtime_verified": true,
-      "note": "RUN-20260823-PMG-001 locally and PR #2 Actions run 32607703300 verify that the exact GitHub commit can be observed, deterministically classified, proposed, human-approved without applying, separately applied, and read through one D1 operational model."
+      "id": "pmg-source-golden-path", "label": "PMG implementation-source Golden Path", "implementation_state": "IMPLEMENTED",
+      "expected_verification": { "contract_id": "OCP-GP-PMG-001", "stage": "ACCEPTANCE_VERIFIED" },
+      "note": "The contract verifies observe, classify, propose, approve without applying, separately apply, and project through one D1 operational model."
     },
     {
-      "id": "github-pr-workflow",
-      "label": "GitHub PR workflow",
-      "implementation": "IMPLEMENTED",
-      "latest_verified_stage": "ACCEPTANCE_VERIFIED",
-      "runtime_verified": true,
-      "note": "PR #1 final head executed Harness Baseline v1 successfully in Actions run 32598569839 and uploaded artifact 9482242652. Merge enforcement remains separate and unverified."
+      "id": "github-pr-workflow", "label": "GitHub PR workflow", "implementation_state": "IMPLEMENTED",
+      "expected_verification": { "contract_id": "OCP-VERIFY-001", "stage": "ACCEPTANCE_VERIFIED", "provider": "github_actions" },
+      "note": "Execution state is resolved from an external attestation for the exact subject commit; it is not embedded here. Branch enforcement remains separately governed."
     }
   ]
 }
