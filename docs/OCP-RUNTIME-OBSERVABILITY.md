@@ -104,6 +104,23 @@ Recorded deployment assessment:
 
 The ChatGPT Sites v0.5 deployment is therefore a frozen prototype snapshot. It may remain available for comparison, but it is not the canonical production path and must not be reported as `RUNTIME_VERIFIED`.
 
+### Current verifier access failure
+
+Case ID: `CASE-RUNTIME-002`
+
+Recorded on 2026-08-23 from the user's independent verifier report. The same frozen v0.5 URL produced an external fetch cache miss, failed DNS resolution from a separate runtime network path, and no search-index result. These are actor- and environment-scoped observations; they do not erase the earlier harness fetch, and the earlier harness fetch does not make the current verifier accessible.
+
+| Dimension | State |
+| --- | --- |
+| Provider deployment | verified |
+| User accessibility | observed |
+| Public indexing | failed in current verifier |
+| Agent accessibility | failed in current verifier |
+| Remote runtime testability | failed in current verifier |
+| Independent acceptance verification | failed / not established |
+
+This case is retained as an acceptance example for Runtime Observability Independence. Source-based local execution and self-describing evidence remain required even when the provider URL cannot be resolved by the reviewer.
+
 ## Repository implementation boundary
 
 Harness Baseline v1 extends the first repository slice with:

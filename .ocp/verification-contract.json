@@ -2,7 +2,7 @@
   "schema": "ocp.verification-contract/v1",
   "contract_id": "OCP-VERIFY-001",
   "baseline_id": "OCP-HARNESS-BASELINE-V1",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "commands": {
     "build": "npm run build",
     "start": "npm run start:runtime",
@@ -32,6 +32,11 @@
       "path": "/feed",
       "view": "feed",
       "expected_landmark": "기준 그래프에서 무엇이 바뀌었나|What changed in the reference graph"
+    },
+    {
+      "path": "/dashboard",
+      "view": "dashboard",
+      "expected_landmark": "추정 진척률이 아닌 운영 상태|Operational state, not a progress estimate"
     },
     {
       "path": "/standards",
@@ -72,6 +77,18 @@
     {
       "id": "AC-SCROLL-001",
       "requirement": "The Standards surface remains operable after an explicit scroll action."
+    },
+    {
+      "id": "AC-GP-GATE-001",
+      "requirement": "In an isolated local D1 runtime, the verified PMG source remains unapplied after capture and after approval."
+    },
+    {
+      "id": "AC-GP-APPLY-001",
+      "requirement": "A separate reviewer apply command creates one revision and one Current-model source relation."
+    },
+    {
+      "id": "AC-GP-PROJECTION-001",
+      "requirement": "Map, Feed, and Dashboard expose the same applied source relation and revision."
     },
     {
       "id": "AC-RUNTIME-001",

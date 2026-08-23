@@ -7,6 +7,10 @@
   "current_state": ".ocp/current-state.json",
   "capability_registry": ".ocp/capability-registry.json",
   "runtime_targets": ".ocp/runtime/targets.json",
+  "golden_path_contract": ".ocp/golden-path-contract.json",
+  "source_manifests": [
+    ".ocp/sources/pmg-ocp-harness-v1.json"
+  ],
   "evidence_root": ".ocp/evidence/runs",
   "human_documentation": "docs/OCP-HARNESS-BASELINE-V1.md",
   "commands": {

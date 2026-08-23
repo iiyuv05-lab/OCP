@@ -1,0 +1,41 @@
+{
+  "schema": "ocp.source-manifest/v1",
+  "source_id": "PMG-SOURCE-OCP-HARNESS-V1",
+  "scope": {
+    "workspace_id": "workspace-nexus",
+    "entity_id": "enterprise-nexus",
+    "name": "Plus Minus G."
+  },
+  "source": {
+    "kind": "github_commit",
+    "repository": "iiyuv05-lab/OCP",
+    "repository_url": "https://github.com/iiyuv05-lab/OCP",
+    "commit": "4ae35dd0fd23c9c32356eef37a6da160fd37605a",
+    "url": "https://github.com/iiyuv05-lab/OCP/commit/4ae35dd0fd23c9c32356eef37a6da160fd37605a",
+    "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
+    "pull_request_state": "open_mergeable_not_merged"
+  },
+  "verification": {
+    "workflow": "Harness Baseline v1",
+    "workflow_run_id": 32598569839,
+    "workflow_url": "https://github.com/iiyuv05-lab/OCP/actions/runs/32598569839",
+    "result": "SUCCESS",
+    "artifact_id": 9482242652,
+    "artifact_name": "ocp-harness-32598569839",
+    "artifact_size_bytes": 7700091,
+    "artifact_digest": "sha256:849f6c5977e28ea03c2c623af3bf90e94439c931494ba08b3b9f145a97b23e7b"
+  },
+  "classification": {
+    "basis": "deterministic_repository_and_scope_match",
+    "scope_entity_id": "enterprise-nexus",
+    "topic_entity_id": "product-ocp",
+    "proposed_relation": "TRACKS_IMPLEMENTATION_SOURCE",
+    "canonical_status": "candidate_pr_pending_merge"
+  },
+  "provenance": {
+    "observed_via": "connected_github_adapter",
+    "recorded_on": "2026-08-23",
+    "content_addressed": true,
+    "note": "The exact commit and Actions result were read from GitHub. This manifest does not claim that PR #1 is merged or that main contains the implementation."
+  }
+}

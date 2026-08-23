@@ -1,7 +1,7 @@
 {
   "schema": "ocp.harness-current-state/v1",
   "baseline_id": "OCP-HARNESS-BASELINE-V1",
-  "recorded_at": "2026-08-22T21:00:10Z",
+  "recorded_at": "2026-08-22T23:39:57.469Z",
   "recorded_time_basis": "UTC",
   "state_ladder": [
     "DECLARED",
@@ -24,11 +24,50 @@
     "github_execution": {
       "state": "ACCEPTANCE_VERIFIED",
       "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
-      "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7",
-      "workflow_run_id": 32598246321,
+      "head_commit": "4ae35dd0fd23c9c32356eef37a6da160fd37605a",
+      "workflow_run_id": 32598569839,
       "result": "SUCCESS",
-      "artifact_id": 9482159491
+      "artifact_id": 9482242652,
+      "artifact_digest": "sha256:849f6c5977e28ea03c2c623af3bf90e94439c931494ba08b3b9f145a97b23e7b"
     }
+  },
+  "runtime_observability": {
+    "target_id": "ocp-sites-v05-snapshot",
+    "deployed": true,
+    "user_accessible": true,
+    "publicly_indexed": false,
+    "agent_accessible_current_verifier": false,
+    "remote_runtime_testable_current_verifier": false,
+    "independently_verified": false,
+    "failure_case": "CASE-RUNTIME-002",
+    "note": "Actor-scoped accessibility does not promote this target beyond DEPLOYED. A user-reported external fetch cache miss, DNS resolution failure, and empty search index were recorded separately from prior local harness evidence."
+  },
+  "golden_path": {
+    "contract_id": "OCP-GP-PMG-001",
+    "latest_stage": "ACCEPTANCE_VERIFIED",
+    "result": "PASS_LOCAL_COMMITTED_SOURCE",
+    "latest_run_id": "RUN-20260823-PMG-001",
+    "source_commit": "28ef14f9c124b5bd710bbb32a2ec555bf3c12ba3",
+    "evidence_path": ".ocp/evidence/runs/RUN-20260823-PMG-001",
+    "runtime": {
+      "actor_class": "independent-browser-harness",
+      "viewports": [
+        "desktop-chromium",
+        "tablet-chromium",
+        "mobile-chromium"
+      ],
+      "screenshots": 25,
+      "dom_snapshots": 25,
+      "console_errors": 0,
+      "network_failures": 0,
+      "artifact_hashes": 173
+    },
+    "observed_transition": {
+      "before_approval": "pending=1; applied_sources=0; head=revision-v03-pmg",
+      "after_approval": "approved_not_applied=1; applied_sources=0; head unchanged",
+      "after_apply": "applied_sources=1; head revision advanced; Map/Feed/Dashboard read the relation"
+    },
+    "boundary": "The applied relation is candidate_pr_pending_merge. It does not claim that PR #1 is merged or that the external Sites runtime contains this source."
   },
   "features": [
     {
@@ -45,15 +84,23 @@
       "implementation": "IMPLEMENTED",
       "latest_verified_stage": "RUNTIME_VERIFIED",
       "runtime_verified": true,
-      "note": "The local independent harness verifies the fixture-backed projection; this does not claim DB-backed Canonical Graph projection."
+      "note": "The local independent harness verifies the fixture-backed projection and a D1-backed applied-source indicator. The graph objects and geometry remain fixture/projector output; this does not claim a full D1-backed Canonical Graph projection."
     },
     {
       "id": "dashboard",
       "label": "Dashboard",
-      "implementation": "NOT_IMPLEMENTED",
-      "latest_verified_stage": "DECLARED",
-      "runtime_verified": false,
-      "note": "Dashboard remains a product direction only."
+      "implementation": "IMPLEMENTED",
+      "latest_verified_stage": "ACCEPTANCE_VERIFIED",
+      "runtime_verified": true,
+      "note": "RUN-20260823-PMG-001 verifies the first operational Dashboard reading observation, proposal, applied-source, bitemporal, and revision values from D1 at three viewports. Broader topic and outcome projections remain unimplemented."
+    },
+    {
+      "id": "pmg-source-golden-path",
+      "label": "PMG implementation-source Golden Path",
+      "implementation": "IMPLEMENTED",
+      "latest_verified_stage": "ACCEPTANCE_VERIFIED",
+      "runtime_verified": true,
+      "note": "RUN-20260823-PMG-001 verifies that the exact GitHub commit can be observed, deterministically classified, proposed, human-approved without applying, separately applied, and read through one D1 operational model."
     },
     {
       "id": "github-pr-workflow",
@@ -61,7 +108,7 @@
       "implementation": "IMPLEMENTED",
       "latest_verified_stage": "ACCEPTANCE_VERIFIED",
       "runtime_verified": true,
-      "note": "PR #1 executed Harness Baseline v1 successfully and uploaded artifact 9482159491. Merge enforcement remains separate and unverified."
+      "note": "PR #1 final head executed Harness Baseline v1 successfully in Actions run 32598569839 and uploaded artifact 9482242652. Merge enforcement remains separate and unverified."
     }
   ]
 }

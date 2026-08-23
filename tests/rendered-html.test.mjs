@@ -210,7 +210,7 @@ test("keeps the new work entry honest about unconnected capabilities", async () 
   assert.match(page, /initialView = "home"/);
   assert.match(page, /No verified adapter/);
   assert.match(page, /Move to input review/);
-  assert.match(page, /Main LLM · context recognition · account imports/);
+  assert.match(page, /Main LLM · general context recognition · account imports/);
   assert.doesNotMatch(page, /LLM CONNECTED|Context loaded successfully|Import complete/);
   assert.match(contract, /L1 sensory flux/);
   assert.match(contract, /Git repository is the Canonical Implementation Plane/);
@@ -240,11 +240,14 @@ test("defines Harness Baseline v1 as a machine-readable and locally executable c
 
   assert.equal(manifest.baseline_id, "OCP-HARNESS-BASELINE-V1");
   assert.deepEqual(manifest.state_ladder, ["DECLARED", "IMPLEMENTED", "BUILD_VERIFIED", "DEPLOYABLE", "DEPLOYED", "ACCESSIBLE", "INTERACTABLE", "RUNTIME_VERIFIED", "ACCEPTANCE_VERIFIED", "OUTCOME_OBSERVED"]);
-  assert.deepEqual(contract.required_routes.map((route) => route.path), ["/", "/map", "/feed", "/standards"]);
+  assert.deepEqual(contract.required_routes.map((route) => route.path), ["/", "/map", "/feed", "/dashboard", "/standards"]);
   assert.deepEqual(contract.required_viewports.map((viewport) => viewport.id), ["desktop", "tablet", "mobile"]);
   assert.ok(contract.evidence_requirements.includes("artifact_hashes"));
   assert.equal(currentState.features.find((feature) => feature.id === "main-llm").implementation, "PARTIAL");
-  assert.equal(currentState.features.find((feature) => feature.id === "dashboard").implementation, "NOT_IMPLEMENTED");
+  assert.equal(currentState.features.find((feature) => feature.id === "dashboard").implementation, "IMPLEMENTED");
+  assert.equal(currentState.features.find((feature) => feature.id === "pmg-source-golden-path").latest_verified_stage, "ACCEPTANCE_VERIFIED");
+  assert.equal(currentState.golden_path.latest_run_id, "RUN-20260823-PMG-001");
+  assert.equal(currentState.golden_path.source_commit, "28ef14f9c124b5bd710bbb32a2ec555bf3c12ba3");
   assert.equal(currentState.baseline.latest_stage, "ACCEPTANCE_VERIFIED");
   assert.equal(currentState.baseline.latest_run_id, "RUN-20260823-001");
   assert.equal(capabilities.capabilities[0].targets.canonical_candidate, "iiyuv05-lab/OCP");
@@ -257,4 +260,36 @@ test("defines Harness Baseline v1 as a machine-readable and locally executable c
   assert.match(pullRequestTemplate, /Approved and applied remain separate/);
   assert.match(codeowners, /@iiyuv05-lab/);
   assert.match(harnessDocument, /Connection existence ≠ Capability availability ≠ Execution verification/);
+});
+
+test("defines the PMG implementation-source Golden Path without collapsing approval into apply", async () => {
+  const [sourceText, contractText, observationRoute, decisionRoute, applyRoute, operationalState, runtimeTest, page] = await Promise.all([
+    readFile(new URL("../.ocp/sources/pmg-ocp-harness-v1.json", import.meta.url), "utf8"),
+    readFile(new URL("../.ocp/golden-path-contract.json", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/observations/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/patch-proposals/[id]/decision/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/patch-proposals/[id]/apply/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/_operational-state.ts", import.meta.url), "utf8"),
+    readFile(new URL("./runtime/runtime-observability.spec.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+  ]);
+  const source = JSON.parse(sourceText);
+  const contract = JSON.parse(contractText);
+
+  assert.equal(source.source.commit, "4ae35dd0fd23c9c32356eef37a6da160fd37605a");
+  assert.equal(source.source.pull_request_state, "open_mergeable_not_merged");
+  assert.equal(source.classification.canonical_status, "candidate_pr_pending_merge");
+  assert.deepEqual(contract.steps, ["input", "classify", "propose", "approve", "apply", "map_refresh", "feed_refresh", "dashboard_refresh", "runtime_verify"]);
+  assert.equal(contract.required_gate, "human");
+  assert.match(observationRoute, /canonicalChanged: false/);
+  assert.match(observationRoute, /deterministic_repository_and_scope_match/);
+  assert.match(decisionRoute, /applied: false/);
+  assert.match(applyRoute, /link_implementation_source_v1/);
+  assert.match(applyRoute, /TRACKS_IMPLEMENTATION_SOURCE/);
+  assert.match(applyRoute, /candidate_pr_pending_merge/);
+  assert.match(operationalState, /ocp\.operational-read-model\/v1/);
+  assert.match(runtimeTest, /AC-GP-GATE-001/);
+  assert.match(runtimeTest, /AC-GP-PROJECTION-001/);
+  assert.match(page, /DashboardView/);
+  assert.match(page, /Approval and application counts are read from D1/);
 });

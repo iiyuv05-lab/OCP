@@ -1,28 +1,29 @@
 # OCP UI audit
 
-Status: Harness Baseline v1 locally and in GitHub PR acceptance-verified · Sites v0.5 frozen with recorded deployment drift
+Status: PMG implementation-source Golden Path locally acceptance-verified · baseline PR verified · Sites v0.5 frozen with actor-scoped access failure
 
 | Field | Value |
 | --- | --- |
-| Audited source | `codex/harness-baseline-v1` · source commit `9b687d2` |
+| Audited source | `codex/pmg-golden-path-v1` · source commit `28ef14f` |
 | Audit date | 2026-08-23 KST |
-| Runtime | built Worker with local D1/R2 + frozen Sites version 1 from deployment snapshot `bdb4236` |
+| Runtime | built Worker with fresh isolated local D1/R2; frozen Sites version 1 remains a separate target at snapshot `bdb4236` |
 | Runtime viewport | 390 × 844, 768 × 1024, and 1440 × 900; prior audit boundaries retained in Git history |
-| Evidence | `RUN-20260823-001`: committed source, source/build tests, health checks, independent DOM/console/network records, twelve screenshots, 91 artifact hashes; frozen deployment failure bundle retained separately |
+| Evidence | `RUN-20260823-PMG-001`: committed source, lint/build/ten source tests, health checks, three independent browser runs, 25 screenshots, 25 DOM snapshots, zero console/network failures, and 173 artifact hashes |
 
 ## Surface inventory
 
 | Surface | Purpose | Current strengths |
 | --- | --- | --- |
-| App shell | Work-entry Home plus Map/Feed/Standards navigation, input, search | Makes the daily work entry primary while retaining graph and revision inspection. |
-| Work-entry Home | Local scope selection and draft routing into governed input | Clearly separates a local draft from connected assistant/context behavior and names unavailable capabilities. |
+| App shell | Work-entry Home plus Map/Feed/Dashboard/Standards navigation, input, search | Makes the daily work entry primary while retaining graph, revision, and D1 operational-state inspection. |
+| Work-entry Home | Local scope selection, draft routing, and exact PMG source intake | Separates a local draft from connected assistant/context behavior and exposes the verified commit/PR boundary before intake. |
 | Time bar | Valid and recorded cutoffs | Correctly separates two time axes. |
 | Control rail | ViewSpec, mode, layers, perspective, REP lens | Exposes eight projections and four model modes. |
 | Map | Spatial semantic projection | Distinctive grid, relation lines, canonical identity continuity. |
 | Inspector | State, relations, history, evidence | Strong object-first context and provenance chain. |
-| Feed | Recorded changes and review queue | Clear editorial card structure and gate labels. |
+| Feed | D1-recorded changes and review queue when connected | Reads proposal counts and applied-source relation from the operational read model instead of retaining the old fixed waiting card. |
+| Dashboard | D1 operational read model | Shows recorded counts, applied source relation, bitemporal boundary, revision, and the next valid action without estimating progress. |
 | Input drawer | Captured input and provenance | Separates raw artifact language from interpretation. |
-| Patch drawer | Human-gated model change | Shows graph diff, evidence, adversarial check, and risk. |
+| Patch drawer | Human-gated model change | Shows deterministic source classification, evidence/checks, `approved · not applied`, and the separate apply command. |
 | Command palette | Object discovery | Fast entry point and useful search result structure. |
 | Standards | Repository contract and implementation-ledger discovery | Includes the v0.5 work-entry/reproducibility direction without presenting repository documents as canonical objects. |
 | Deployment Truth | Repository-recorded verification ladder and target evidence | Distinguishes build, deployment, accessibility, interaction, runtime, and acceptance states without presenting the panel as a live registry. |
@@ -39,7 +40,7 @@ Status: Harness Baseline v1 locally and in GitHub PR acceptance-verified · Site
 | T-04 | P1 | Layers | Layer toggles change decorative planes, not visible object membership or primary state. Perspective changes only a label. | Controls imply a semantic query that did not occur. | Derive visible objects and displayed state from active layer/perspective snapshots. | Resolved · runtime verified |
 | A-01 | P1 | Dialogs | Focus trap and focus restoration are incomplete; many compact controls are below 44 px on mobile. | Keyboard and touch use are unreliable. | Add modal focus management and mobile target sizing. | Resolved · runtime verified |
 | S-01 | P1 | First viewport | Human gate and active actor state are secondary to decorative collaborator avatars and badges. | Intervention is not discoverable within a quick scan. | Use recorded actor/gate status in the toolbar. | Resolved |
-| T-05 | P1 | Data refresh | The primary graph remains an in-memory projection after writes. | A persisted observation is not automatically reflected in the canonical projection. | State this boundary; refresh server-backed read models in a later data-integration slice. | Deferred |
+| T-05 | P1 | Data refresh | The primary graph objects remain an in-memory fixture, but source linkage now refreshes through one D1 operational read model. | The first applied relation is visible consistently without implying that the fixture graph was rebuilt. | Keep the boundary explicit; move project propositions and objects to the server read model in a later slice. | Improved · first D1 cross-surface slice runtime verified |
 | M-01 | P2 | Motion | Durations are scattered; reduced-motion exists but transitions are not tokenized. | Motion is harder to audit and tune. | Add motion tokens and remove continuous fixture pulses. | Resolved · reduced motion verified |
 | C-01 | P2 | Maintainability | `page.tsx` and `globals.css` contain broad, layered responsibilities. | Cross-surface changes are costly. | Extract only after a component has a stable boundary; avoid a cosmetic rewrite. | Deferred |
 | Q-01 | P2 | QA | The previous suite covered SSR copy and canonical persistence but not interactions or responsive runtime. | Keyboard and mobile regressions could pass. | Add pure behavior invariants and browser evidence for changed surfaces. | Improved · first automated desktop/mobile traversal implemented and passed locally |
@@ -49,7 +50,9 @@ Status: Harness Baseline v1 locally and in GitHub PR acceptance-verified · Site
 | D-01 | P1 | Product governance | The v0.3 contract and implementation ledger existed only as repository files and had no discoverable location in the interface. | Approved direction could be mistaken for missing work or implemented behavior. | Add a repository-reference surface with explicit paths and a non-canonical boundary notice. | Resolved in current source/local runtime · canonical ingestion remains unimplemented |
 | H-01 | P1 | Product entry | The application defaults to Map even though the supplied v0.5 direction makes work conversation and capture the primary daily entry. | Users begin in a specialist projection instead of a familiar work-entry flow. | Default to a truthful Home that routes a local draft into existing input review and marks assistant/context/import capabilities as unconnected. | Resolved · desktop and 375 px runtime verified on parallel deployment |
 | Q-02 | P0 | Deployment/runtime | A successful provider deployment could be treated as proof that an independent actor can fetch, render, and use the same implementation. | Inaccessible or stale deployments can be reported as working, and validation falls back to manual screenshots. | Adopt `OCP-RC-002`, insert Deployment Truth, require independent browser evidence, and preserve target-specific failures. | Improved · machine contract and one-command local evidence pipeline implemented; frozen Sites drift retained; external preview pending |
-| Q-03 | P1 | Verification entry | Commands, routes, viewports, acceptance checks, and artifact requirements were distributed across scripts and prose. | A new actor could not know the complete verification contract without reconstructing it manually. | Add the Harness Baseline v1 manifest, contract, state ladder, capability registry, and hashed evidence bundle. | Resolved locally and in PR · `RUN-20260823-001` and Actions run `32598246321` passed |
+| Q-03 | P1 | Verification entry | Commands, routes, viewports, acceptance checks, and artifact requirements were distributed across scripts and prose. | A new actor could not know the complete verification contract without reconstructing it manually. | Add the Harness Baseline v1 manifest, contract, state ladder, capability registry, and hashed evidence bundle. | Resolved locally and in PR · `RUN-20260823-001` and Actions run `32598569839` passed |
+| T-06 | P0 | Golden Path state | A fixed Map gate count and the old Feed `Patch #014` card could conflict with a real proposal after intake/apply. | A user could see a stale review state after a server-confirmed transition. | Derive Map gate count, Feed review queue, applied-source record, and Dashboard metrics from the same D1 read model. | Resolved · `RUN-20260823-PMG-001` |
+| G-01 | P0 | PMG source intake | No real artifact completed the path from observation to an applied Current-model relation. | Harness existence alone could be mistaken for product-state integration. | Use the exact verified GitHub commit, deterministic classification, a human gate, separate apply, and shared cross-surface read model. | Resolved for one implementation-source relation · local acceptance verified |
 
 ## Baseline visual critic
 
@@ -83,4 +86,4 @@ The selected slice is truthful async state → recorded operational status → m
 | Brand character | 4.2 |
 | Trend relevance | 4.0 |
 
-These scores describe the verified implementation, not final brand approval. Remaining work includes server-backed graph refresh, broader interaction coverage, a GitHub-canonical external preview, production acceptance evidence, and a later stable component extraction.
+These scores describe the verified implementation, not final brand approval. The `ocp-ui-improvement` pass replaced conflicting fixture status with server-confirmed state, added a compact responsive Dashboard, and kept map geometry projector-only. Remaining work includes server-backed graph objects, broader PMG material ingestion, the PMG branch's GitHub CI execution, an external D1/R2 preview, production acceptance evidence, and later stable component extraction.

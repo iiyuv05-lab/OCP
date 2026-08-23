@@ -6,10 +6,10 @@
     "repository": "https://github.com/iiyuv05-lab/OCP",
     "default_branch": "main",
     "state": "github_pr_ci_verified_pending_merge",
-    "note": "PR #1 exists and GitHub Actions run 32598246321 passed with artifact 9482159491. Main promotion and branch-rule enforcement remain unverified.",
+    "note": "PR #1 exists and final GitHub Actions run 32598569839 passed with artifact 9482242652. Main promotion and branch-rule enforcement remain unverified.",
     "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
-    "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7",
-    "workflow_run_id": 32598246321
+    "head_commit": "4ae35dd0fd23c9c32356eef37a6da160fd37605a",
+    "workflow_run_id": 32598569839
   },
   "targets": [
     {
@@ -27,16 +27,19 @@
         "acceptance_verified": "verified_local_actor"
       },
       "latest_harness_run": {
-        "started_at": "2026-08-22T20:26:21.831Z",
+        "started_at": "2026-08-22T23:39:14.037Z",
         "actor_class": "independent-browser-harness",
         "projects": ["desktop-chromium", "tablet-chromium", "mobile-chromium"],
-        "interaction": "passed_direct_routes_click_type_scroll",
+        "interaction": "passed_input_classify_approve_without_apply_apply_map_feed_dashboard",
         "console_errors": 0,
         "network_failures": 0,
         "result": "PASS",
-        "run_id": "RUN-20260823-001",
-        "source_commit": "9b687d2aa3f138c51155117862b1cf814adcf977",
-        "evidence_path": ".ocp/evidence/runs/RUN-20260823-001"
+        "run_id": "RUN-20260823-PMG-001",
+        "source_commit": "28ef14f9c124b5bd710bbb32a2ec555bf3c12ba3",
+        "evidence_path": ".ocp/evidence/runs/RUN-20260823-PMG-001",
+        "screenshots": 25,
+        "dom_snapshots": 25,
+        "artifact_hashes": 173
       }
     },
     {
@@ -55,10 +58,33 @@
         "deployed": "verified_by_provider",
         "accessible": "environment_dependent",
         "interactable": "environment_dependent",
+        "publicly_indexed": "failed_no_result_current_verifier",
+        "agent_accessible": "failed_current_verifier",
+        "remote_runtime_testable": "failed_current_verifier",
+        "independently_verified": "failed",
         "runtime_verified": "failed_implementation_deployment_drift",
         "acceptance_verified": "not_run"
       },
-      "failure_case": "CASE-RUNTIME-001",
+      "failure_cases": ["CASE-RUNTIME-001", "CASE-RUNTIME-002"],
+      "actor_scoped_access": [
+        {
+          "actor_class": "user-browser",
+          "state": "observed_accessible",
+          "provenance": "user_report"
+        },
+        {
+          "actor_class": "independent-browser-harness",
+          "state": "previously_accessible_but_acceptance_failed",
+          "provenance": ".ocp/runtime/evidence/CASE-RUNTIME-001"
+        },
+        {
+          "actor_class": "current-independent-verifier",
+          "state": "inaccessible",
+          "observed_failures": ["external_fetch_cache_miss", "runtime_dns_resolution_failed", "search_index_no_result"],
+          "recorded_at": "2026-08-23",
+          "provenance": "user_report"
+        }
+      ],
       "latest_harness_run": {
         "started_at": "2026-08-22T08:56:43.931Z",
         "actor_class": "independent-browser-harness",
