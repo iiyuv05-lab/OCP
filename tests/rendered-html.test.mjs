@@ -195,7 +195,7 @@ test("records deployment truth and runs independent-browser evidence through OCP
   assert.match(deploymentWorkflow, /OCP_RUNTIME_URL/);
   assert.match(referenceIndex, /deploymentVerificationStages/);
   assert.match(referenceIndex, /environment-dependent/);
-  assert.match(statusLedger, /Runtime Observability Independence \| Harness Baseline v1 local and PR execution verified/);
+  assert.match(statusLedger, /Runtime Observability Independence \| Baseline and PMG Golden Path local\/PR execution verified/);
   assert.doesNotMatch(statusLedger, /Runtime Observability Independence \| Implemented/);
 });
 
@@ -248,6 +248,8 @@ test("defines Harness Baseline v1 as a machine-readable and locally executable c
   assert.equal(currentState.features.find((feature) => feature.id === "pmg-source-golden-path").latest_verified_stage, "ACCEPTANCE_VERIFIED");
   assert.equal(currentState.golden_path.latest_run_id, "RUN-20260823-PMG-001");
   assert.equal(currentState.golden_path.source_commit, "28ef14f9c124b5bd710bbb32a2ec555bf3c12ba3");
+  assert.equal(currentState.golden_path.github_execution.workflow_run_id, 32607703300);
+  assert.equal(currentState.golden_path.github_execution.result, "SUCCESS");
   assert.equal(currentState.baseline.latest_stage, "ACCEPTANCE_VERIFIED");
   assert.equal(currentState.baseline.latest_run_id, "RUN-20260823-001");
   assert.equal(capabilities.capabilities[0].targets.canonical_candidate, "iiyuv05-lab/OCP");

@@ -1,6 +1,6 @@
 # OCP UI audit
 
-Status: PMG implementation-source Golden Path locally acceptance-verified · baseline PR verified · Sites v0.5 frozen with actor-scoped access failure
+Status: PMG implementation-source Golden Path locally and in PR #2 acceptance-verified · Sites v0.5 frozen with actor-scoped access failure
 
 | Field | Value |
 | --- | --- |
@@ -86,4 +86,4 @@ The selected slice is truthful async state → recorded operational status → m
 | Brand character | 4.2 |
 | Trend relevance | 4.0 |
 
-These scores describe the verified implementation, not final brand approval. The `ocp-ui-improvement` pass replaced conflicting fixture status with server-confirmed state, added a compact responsive Dashboard, and kept map geometry projector-only. Remaining work includes server-backed graph objects, broader PMG material ingestion, the PMG branch's GitHub CI execution, an external D1/R2 preview, production acceptance evidence, and later stable component extraction.
+These scores describe the verified implementation, not final brand approval. The `ocp-ui-improvement` pass replaced conflicting fixture status with server-confirmed state, added a compact responsive Dashboard, and kept map geometry projector-only. Remaining work includes server-backed graph objects, broader PMG material ingestion, review/merge of the stacked PRs, an external D1/R2 preview, production acceptance evidence, and later stable component extraction.

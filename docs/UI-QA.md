@@ -1,6 +1,6 @@
 # OCP UI QA
 
-Status: PMG implementation-source Golden Path locally acceptance-verified; baseline PR verified; PMG branch CI, merge enforcement, and external preview pending
+Status: PMG implementation-source Golden Path locally and in PR #2 acceptance-verified; merge enforcement and external preview pending
 
 This file records the latest executed checks only. Git history is the audit history.
 
@@ -16,6 +16,7 @@ This file records the latest executed checks only. Git history is the audit hist
 | Criterion | Status | Evidence | Issue |
 | --- | --- | --- | --- |
 | PMG Golden Path single command | PASS | `RUN-20260823-PMG-001` executed `npm run verify` from clean tracked source commit `28ef14f`; lint, production build, ten source tests, D1 preparation, healthcheck, and three browser projects passed. | This is local acceptance evidence, not proof of a shared deployment. |
+| PMG PR #2 and Actions execution | PASS | [PR #2](https://github.com/iiyuv05-lab/OCP/pull/2) is open and mergeable; Actions run `32607703300` passed on source commit `a5f2d69`; artifact `9484601501` (`ocp-harness-32607703300`, 13,624,998 bytes, `sha256:aa632718cc8e18569776a489d580e836b399edf1074692129c9f6d3ee8cda834`) was retained. | PR #2 is stacked on unmerged PR #1; neither merge nor external deployment is claimed. |
 | Input → classification → proposal | PASS | The desktop browser submitted exact commit `4ae35dd…`; D1 recorded one immutable external representation, Observation/Evidence, deterministic scope classification, and one pending human-gated proposal while Current remained at `revision-v03-pmg`. | The representation points to exact external content; raw GitHub bytes are not copied into R2. |
 | Approval ≠ apply | PASS | After approval, bootstrap returned `approved_not_applied=1`, `applied_sources=0`, and the unchanged head revision. The drawer visibly displayed `승인됨 · 아직 미반영`. | — |
 | Separate apply and idempotency | PASS | The separate apply command created one bitemporal `TRACKS_IMPLEMENTATION_SOURCE` relation, advanced the head revision, and a repeated manual integration call returned the same revision as a duplicate. | General commands and revert remain outside this slice. |
@@ -43,7 +44,7 @@ This file records the latest executed checks only. Git history is the audit hist
 | Local built-Worker runtime harness | PASS | Playwright independently traversed Work → Map → Feed → Dashboard → Standards at all three required viewports and executed the Golden Path against isolated D1/R2 bindings. | Local runtime verification is not production acceptance. |
 | Frozen Sites runtime harness | FAIL | Both viewport actors fetched and traversed the deployment without console or network errors, then failed because snapshot `bdb4236` lacks the `OCP-RC-002` Standards marker. Evidence is preserved under `.ocp/runtime/evidence/CASE-RUNTIME-001/`. | The deployed snapshot and current implementation have drifted; Sites v0.5 remains frozen rather than being silently redeployed. |
 | Frozen Sites access in current verifier | FAIL | User-reported independent checks on 2026-08-23 produced an external fetch cache miss, a separate runtime DNS-resolution failure, and no search-index result. Recorded as `CASE-RUNTIME-002`; no screenshot was requested. | This is an actor-scoped accessibility failure. It coexists with prior harness access and leaves remote acceptance unverified. |
-| GitHub canonical candidate repository | PASS | Repository `iiyuv05-lab/OCP` is accessible; PR #1 and Actions are execution-verified. The first PMG source relation records the exact verified PR head as `candidate_pr_pending_merge`. | Canonical `main`, branch enforcement, merge, and the PMG branch's own CI remain unverified. |
+| GitHub canonical candidate repository | PASS | Repository `iiyuv05-lab/OCP` is accessible; PR #1 and PR #2 Actions are execution-verified. The first PMG source relation records the exact baseline PR head as `candidate_pr_pending_merge`. | Canonical `main`, branch enforcement, and merge remain unverified. |
 | External preview runtime | NOT RUN | No D1/R2-compatible preview provider is connected to the repository. | Connect a provider and emit a deployment URL to the runtime-verification workflow. |
 | Remote Sites build and deployment | PASS | Remote build advanced through building and publishing to `succeeded`; version 1 serves deployment snapshot `bdb4236`. | This older remote success does not establish parity with commit `28ef14f` or the local Golden Path. |
 | Sites access connector | PASS | A separate Site project was created without changing the original persisted project ID; version 1 was saved, deployed, and set to `public`. | Source-editor sharing was not changed. |
@@ -57,7 +58,7 @@ This file records the latest executed checks only. Git history is the audit hist
 ## Remaining conditions
 
 - The parallel Site audience is public and the v0.5 snapshot is frozen. Public access permits opening the interface; it does not imply anonymous canonical writes, raw-artifact access, source-edit authority, or parity with the current repository implementation.
-- GitHub is established as the Canonical Implementation candidate and PR/Actions execution is verified. PR #1 remains unmerged, branch enforcement is unverified, and the PMG branch has not yet run in GitHub Actions.
+- GitHub is established as the Canonical Implementation candidate and both stacked PRs have passing Actions evidence. PR #1 and PR #2 remain unmerged, and branch enforcement is unverified.
 - An external D1/R2-compatible preview remains unavailable. The local acceptance result is not presented as a deployed shared runtime.
 - Self-join intentionally grants `writer` only. Reviewer and admin promotion remains a server-managed governance action.
 - ChatGPT Sites source-edit access is separate from OCP writer membership and is not granted by a public link.
