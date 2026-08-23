@@ -1,0 +1,33 @@
+{
+  "schema": "ocp.runtime-run/v1",
+  "policy_id": "OCP-RC-002",
+  "target_manifest_schema": "ocp.runtime-targets/v1",
+  "target_id": "ocp-sites-v05-snapshot",
+  "runtime_url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/",
+  "actor_class": "independent-browser-harness",
+  "project": "mobile-chromium",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "started_at": "2026-08-22T08:56:55.546Z",
+  "finished_at": "2026-08-22T08:57:06.108Z",
+  "actions": [
+    "open:/",
+    "assert:work-home",
+    "navigate:map",
+    "navigate:feed"
+  ],
+  "result": "FAIL",
+  "failure": {
+    "name": "Error",
+    "message": "\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText('DEPLOYED ≠ RUNTIME VERIFIED', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('DEPLOYED ≠ RUNTIME VERIFIED', { exact: true })\u001b[22m\n"
+  },
+  "evidence": {
+    "dom_sha256": "661953a26d5ed8a357aaa7986c5e1f82dabddb559c634c97bd0e9d53acff56f2",
+    "console_events": 0,
+    "console_errors": 0,
+    "network_events": 12,
+    "network_failures": 0
+  }
+}

@@ -1,0 +1,45 @@
+name: Verify external deployment runtime
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      runtime_url:
+        description: Deployed preview or production URL
+        required: true
+        type: string
+      target_id:
+        description: OCP runtime target identifier
+        required: false
+        default: manual-external-runtime
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OCP_RUNTIME_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.runtime_url || github.event.deployment_status.environment_url }}
+      OCP_RUNTIME_TARGET_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.target_id || github.event.deployment.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Reject missing deployment URL
+        run: test -n "$OCP_RUNTIME_URL"
+      - run: npm run test:runtime:external
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocp-external-runtime-evidence
+          path: outputs/runtime
+          if-no-files-found: error
+          retention-days: 30

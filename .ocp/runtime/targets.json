@@ -1,0 +1,92 @@
+{
+  "schema": "ocp.runtime-targets/v1",
+  "policy_id": "OCP-RC-002",
+  "canonical_implementation": {
+    "kind": "git",
+    "repository": "https://github.com/iiyuv05-lab/OCP",
+    "default_branch": "main",
+    "state": "github_pr_ci_verified_pending_merge",
+    "note": "PR #1 exists and GitHub Actions run 32598246321 passed with artifact 9482159491. Main promotion and branch-rule enforcement remain unverified.",
+    "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
+    "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7",
+    "workflow_run_id": 32598246321
+  },
+  "targets": [
+    {
+      "id": "ocp-local-runtime",
+      "kind": "local",
+      "lifecycle": "verification",
+      "url_from_env": "OCP_RUNTIME_URL",
+      "verification": {
+        "build_verified": "verified_local_build",
+        "deployable": "not_applicable",
+        "deployed": "not_applicable",
+        "accessible": "verified_local_actor",
+        "interactable": "verified_local_actor",
+        "runtime_verified": "verified_local_actor",
+        "acceptance_verified": "verified_local_actor"
+      },
+      "latest_harness_run": {
+        "started_at": "2026-08-22T20:26:21.831Z",
+        "actor_class": "independent-browser-harness",
+        "projects": ["desktop-chromium", "tablet-chromium", "mobile-chromium"],
+        "interaction": "passed_direct_routes_click_type_scroll",
+        "console_errors": 0,
+        "network_failures": 0,
+        "result": "PASS",
+        "run_id": "RUN-20260823-001",
+        "source_commit": "9b687d2aa3f138c51155117862b1cf814adcf977",
+        "evidence_path": ".ocp/evidence/runs/RUN-20260823-001"
+      }
+    },
+    {
+      "id": "ocp-sites-v05-snapshot",
+      "kind": "prototype_snapshot",
+      "provider": "chatgpt_sites",
+      "lifecycle": "frozen",
+      "url": "https://ocp-work-context-jiyoung-v05.iiyuv05.chatgpt.site/",
+      "project_id": "appgprj_6a88d738a828819183fbf7193f9c8200",
+      "deployment_id": "appgdep_6a88db4987688191bad1c5c6401141e6",
+      "version_id": "appgprj_6a88d738a828819183fbf7193f9c8200~appgver_07e8b9b340848191b23fe53b735ae242",
+      "source_commit": "bdb42368933115d617e6478b6e8cad1d10a6f690",
+      "verification": {
+        "build_verified": "verified_by_provider",
+        "deployable": "verified_by_provider",
+        "deployed": "verified_by_provider",
+        "accessible": "environment_dependent",
+        "interactable": "environment_dependent",
+        "runtime_verified": "failed_implementation_deployment_drift",
+        "acceptance_verified": "not_run"
+      },
+      "failure_case": "CASE-RUNTIME-001",
+      "latest_harness_run": {
+        "started_at": "2026-08-22T08:56:43.931Z",
+        "actor_class": "independent-browser-harness",
+        "projects": ["desktop-chromium", "mobile-chromium"],
+        "fetch": "passed",
+        "interaction": "passed_through_standards_navigation",
+        "console_errors": 0,
+        "network_failures": 0,
+        "result": "FAIL",
+        "reason": "deployed snapshot does not contain the OCP-RC-002 Standards marker from the tested implementation",
+        "evidence_path": ".ocp/runtime/evidence/CASE-RUNTIME-001"
+      }
+    },
+    {
+      "id": "ocp-external-preview",
+      "kind": "pull_request_preview",
+      "lifecycle": "required",
+      "provider": null,
+      "url_from_event": "deployment_status.environment_url",
+      "verification": {
+        "build_verified": "not_run",
+        "deployable": "blocked_missing_provider",
+        "deployed": "not_run",
+        "accessible": "not_run",
+        "interactable": "not_run",
+        "runtime_verified": "not_run",
+        "acceptance_verified": "not_run"
+      }
+    }
+  ]
+}

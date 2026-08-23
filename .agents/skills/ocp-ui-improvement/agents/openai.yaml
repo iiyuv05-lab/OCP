@@ -1,0 +1,4 @@
+interface:
+  display_name: "OCP UI Improvement"
+  short_description: "Improve OCP UI without compromising canonical truth"
+  default_prompt: "Audit or improve the requested OCP UI surface, validate it proportionally, and record evidence in docs/UI-QA.md."

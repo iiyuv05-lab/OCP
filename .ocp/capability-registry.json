@@ -1,0 +1,64 @@
+{
+  "schema": "ocp.capability-registry/v1",
+  "rule": "Connection existence != Capability availability != Execution verification",
+  "capabilities": [
+    {
+      "id": "github",
+      "connection": {
+        "state": "CONNECTED",
+        "account": "iiyuv05-lab",
+        "last_verified": "2026-08-23",
+        "evidence": "GitHub connector returned the authenticated profile and one accessible repository."
+      },
+      "targets": {
+        "accessible_repository_count": 1,
+        "canonical_candidate": "iiyuv05-lab/OCP",
+        "url": "https://github.com/iiyuv05-lab/OCP",
+        "permissions": [
+          "admin",
+          "maintain",
+          "pull",
+          "push",
+          "triage"
+        ]
+      },
+      "operations": {
+        "READ": {
+          "availability": "AVAILABLE",
+          "execution": "VERIFIED"
+        },
+        "WRITE": {
+          "availability": "AVAILABLE",
+          "execution": "VERIFIED_VIA_CONNECTOR",
+          "note": "GitHub Git Data writes created the source tree and branch. Local HTTPS push remains unavailable because this checkout has no GitHub credential."
+        },
+        "CREATE_REPOSITORY": {
+          "availability": "UNAVAILABLE_IN_CONNECTOR",
+          "execution": "NOT_APPLICABLE"
+        },
+        "PULL_REQUEST": {
+          "availability": "AVAILABLE",
+          "execution": "VERIFIED",
+          "evidence": "https://github.com/iiyuv05-lab/OCP/pull/1"
+        },
+        "ACTIONS": {
+          "availability": "AVAILABLE",
+          "execution": "VERIFIED",
+          "workflow_run_id": 32598246321,
+          "result": "SUCCESS",
+          "artifact_id": 9482159491,
+          "artifact_name": "ocp-harness-32598246321",
+          "artifact_digest": "sha256:8a2562137edc132596634162b2239d9b45879a825a670a68239a88ee0407a376"
+        }
+      },
+      "canonical_source": {
+        "state": "ESTABLISHED_PR_PENDING_MERGE",
+        "default_branch": "main",
+        "remote": "https://github.com/iiyuv05-lab/OCP.git",
+        "pull_request": "https://github.com/iiyuv05-lab/OCP/pull/1",
+        "head_branch": "codex/harness-baseline-v1",
+        "head_commit": "215273f21c58cade3f1081f08f6ac0670f42bdb7"
+      }
+    }
+  ]
+}
