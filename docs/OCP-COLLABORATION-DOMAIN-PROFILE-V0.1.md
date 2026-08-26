@@ -5,7 +5,8 @@
 **Status:** schema proposal · non-normative  
 **Recorded:** 2026-08-27 KST  
 **Depends on:** `OCP-FEDERATED-WORK-CAPABILITY-PLATFORM.md`, `OCP-V0.5.md`, Canonical Graph v0.1  
-**Scope:** collaboration-centred intake, flow reconstruction, diagnosis, and Obsidian-compatible projection
+**Scope:** collaboration-centred intake, flow reconstruction, diagnosis, and Obsidian-compatible projection  
+**Korean-first extension:** `OCP-INTAKE-DISPLAY-ISOLATION-PROFILE-V0.2.md`
 
 ## 1. Purpose
 
@@ -183,6 +184,7 @@ The same packet must be fillable without AI.
 ## Unknowns and conflicts
 - KNOWN_MISSING:
 - KNOWN_INACCESSIBLE:
+- AUTH_CONTEXT_REQUIRED:
 - CONFLICT:
 
 ## Review
@@ -234,7 +236,7 @@ This profile is ready for governance review when:
 3. no secret-like value or private account identifier exists in the public fixture;
 4. each candidate has provenance and independent review/application states;
 5. existing canonical entity kinds and invariants remain unchanged;
-6. unavailable Claude/ChatGPT artifacts remain `KNOWN_INACCESSIBLE`, not summarized from titles;
+6. sources that require the owner's authenticated browser remain `AUTH_CONTEXT_REQUIRED`; verified access failure may use `KNOWN_INACCESSIBLE`; neither state is summarized from titles;
 7. no implementation, runtime, deployment, or outcome success is claimed without evidence.
 
 ## 13. Not implemented by this proposal
