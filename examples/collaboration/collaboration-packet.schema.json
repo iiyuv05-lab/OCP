@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ocp.local/schemas/collaboration-packet-v0.1.json",
+  "title": "OCP Collaboration Packet v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet", "source", "privacy", "candidates", "questions", "review", "application"],
+  "properties": {
+    "packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "id", "recordedAt", "producer", "status"],
+      "properties": {
+        "version": {"const": "0.1"},
+        "id": {"type": "string", "minLength": 1},
+        "recordedAt": {"type": "string", "format": "date-time"},
+        "producer": {"type": "string", "minLength": 1},
+        "status": {"enum": ["draft", "under_review", "approved", "rejected"]}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "mediaType", "sourceOfTruth", "accessState", "contentState"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "mediaType": {"type": "string", "minLength": 1},
+        "sourceOfTruth": {"type": "string", "minLength": 1},
+        "accessState": {"enum": ["known_accessible", "auth_context_required", "known_inaccessible", "unknown_access", "missing"]},
+        "contentState": {"enum": ["verbatim_raw", "redacted_derivative", "source_digest", "external_reference"]},
+        "sha256": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["isolation", "publicationEligible", "containsSecrets", "redactions"],
+      "properties": {
+        "isolation": {"enum": ["self_work", "self_private", "other_consented", "other_unconsented", "product", "company_public", "company_internal"]},
+        "publicationEligible": {"type": "boolean"},
+        "containsSecrets": {"type": "boolean"},
+        "redactions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "reason", "blocking", "state"],
+        "properties": {
+          "id": {"type": "string"},
+          "reason": {"type": "string"},
+          "blocking": {"type": "boolean"},
+          "state": {"enum": ["open", "answered", "waived"]}
+        }
+      }
+    },
+    "review": {"$ref": "#/$defs/review"},
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {"enum": ["not_applied", "applied", "apply_failed"]},
+        "runRef": {"type": ["string", "null"]},
+        "revisionRef": {"type": ["string", "null"]}
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "canvasRef": {"type": ["string", "null"]},
+        "graphViewSpecRef": {"type": ["string", "null"]},
+        "tableRef": {"type": ["string", "null"]}
+      }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "interactionKind", "label", "epistemicMode", "modelLayer", "operationalState", "health", "confidence", "approvalState", "sourceRefs", "fields", "relationCandidates"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "interactionKind": {"enum": ["object", "person", "organization", "project", "product", "tool", "pain", "need", "goal", "flow", "step", "capability", "provider", "connector", "account_requirement", "decision", "source", "evidence", "unknown"]},
+        "label": {"type": "string", "minLength": 1},
+        "epistemicMode": {"enum": ["observed", "reported", "quoted", "inferred", "planned", "forecast", "hypothetical", "unknown"]},
+        "modelLayer": {"enum": ["observation", "reference", "current", "goal"]},
+        "operationalState": {"enum": ["idle", "queued", "working", "blocked", "human_required", "completed", "failed"]},
+        "health": {"enum": ["healthy", "attention", "risk", "neutral"]},
+        "confidence": {"enum": ["unverified", "weak", "probable", "confirmed"]},
+        "approvalState": {"enum": ["candidate", "under_review", "approved", "rejected"]},
+        "sourceRefs": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "fields": {"type": "object"},
+        "relationCandidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["predicate", "target", "approvalState", "sourceRefs"],
+            "properties": {
+              "predicate": {"type": "string"},
+              "target": {"type": "string"},
+              "approvalState": {"enum": ["candidate", "under_review", "approved", "rejected"]},
+              "sourceRefs": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+            }
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "approvedCandidateIds", "rejectedCandidateIds"],
+      "properties": {
+        "state": {"enum": ["not_reviewed", "in_review", "approved", "rejected", "mixed"]},
+        "reviewer": {"type": ["string", "null"]},
+        "decidedAt": {"type": ["string", "null"], "format": "date-time"},
+        "rationale": {"type": ["string", "null"]},
+        "approvedCandidateIds": {"type": "array", "items": {"type": "string"}},
+        "rejectedCandidateIds": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

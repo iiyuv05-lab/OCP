@@ -1,0 +1,157 @@
+{
+  "packet": {
+    "version": "0.1",
+    "id": "OCP-COLLAB-PILOT-01",
+    "recordedAt": "2026-08-27T00:00:00+09:00",
+    "producer": "Codex candidate extractor",
+    "status": "draft"
+  },
+  "source": {
+    "ref": "private-vault://source/user-input-2026-08-26-ocp-data-bundle",
+    "mediaType": "text/markdown",
+    "sourceOfTruth": "private OCP Vault",
+    "accessState": "known_inaccessible",
+    "contentState": "source_digest",
+    "sha256": null
+  },
+  "privacy": {
+    "isolation": "product",
+    "publicationEligible": true,
+    "containsSecrets": false,
+    "redactions": [
+      "Personal names replaced by case IDs",
+      "Account identifiers omitted",
+      "Personal pain details omitted"
+    ]
+  },
+  "candidates": [
+    {
+      "id": "C-001",
+      "interactionKind": "goal",
+      "label": "Represent heterogeneous collaboration flows without inventing facts",
+      "epistemicMode": "planned",
+      "modelLayer": "goal",
+      "operationalState": "working",
+      "health": "attention",
+      "confidence": "confirmed",
+      "approvalState": "candidate",
+      "sourceRefs": ["private-vault://source/user-input-2026-08-26-ocp-data-bundle"],
+      "fields": {
+        "acceptance": "One baseline and six target cases can be represented with source trace, unknowns, authority gates, and no per-case ontology fork"
+      },
+      "relationCandidates": [
+        {
+          "predicate": "targets",
+          "target": "C-002",
+          "approvalState": "candidate",
+          "sourceRefs": ["private-vault://source/user-input-2026-08-26-ocp-data-bundle"]
+        }
+      ]
+    },
+    {
+      "id": "C-002",
+      "interactionKind": "flow",
+      "label": "Collaboration intake and reconstruction",
+      "epistemicMode": "planned",
+      "modelLayer": "goal",
+      "operationalState": "working",
+      "health": "attention",
+      "confidence": "probable",
+      "approvalState": "candidate",
+      "sourceRefs": ["private-vault://source/user-input-2026-08-26-ocp-data-bundle"],
+      "fields": {
+        "steps": [
+          "preserve_or_anchor",
+          "classify_privacy",
+          "extract_candidates",
+          "ask_material_questions",
+          "review",
+          "apply_separately",
+          "project_canvas_graph",
+          "diagnose"
+        ]
+      },
+      "relationCandidates": [
+        {
+          "predicate": "depends_on",
+          "target": "C-003",
+          "approvalState": "candidate",
+          "sourceRefs": ["docs/OCP-V0.5.md"]
+        }
+      ]
+    },
+    {
+      "id": "C-003",
+      "interactionKind": "decision",
+      "label": "Human review and application remain separate",
+      "epistemicMode": "quoted",
+      "modelLayer": "reference",
+      "operationalState": "human_required",
+      "health": "healthy",
+      "confidence": "confirmed",
+      "approvalState": "candidate",
+      "sourceRefs": ["docs/OCP-V0.5.md", "AGENTS.md"],
+      "fields": {
+        "reviewState": "not_reviewed",
+        "applicationState": "not_applied"
+      },
+      "relationCandidates": []
+    },
+    {
+      "id": "C-004",
+      "interactionKind": "account_requirement",
+      "label": "External source access requirement",
+      "epistemicMode": "observed",
+      "modelLayer": "current",
+      "operationalState": "blocked",
+      "health": "risk",
+      "confidence": "confirmed",
+      "approvalState": "candidate",
+      "sourceRefs": ["private-vault://source/user-input-2026-08-26-ocp-data-bundle"],
+      "fields": {
+        "accessState": "known_inaccessible",
+        "secretStored": false
+      },
+      "relationCandidates": [
+        {
+          "predicate": "blocks",
+          "target": "C-002",
+          "approvalState": "candidate",
+          "sourceRefs": ["private-vault://source/user-input-2026-08-26-ocp-data-bundle"]
+        }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "Q-001",
+      "reason": "The external research artifact URLs do not expose their contents to the current reader; titles are insufficient evidence.",
+      "blocking": false,
+      "state": "open"
+    },
+    {
+      "id": "Q-002",
+      "reason": "Five target cases lack a complete observed input-step-output trace.",
+      "blocking": true,
+      "state": "open"
+    }
+  ],
+  "review": {
+    "state": "not_reviewed",
+    "reviewer": null,
+    "decidedAt": null,
+    "rationale": null,
+    "approvedCandidateIds": [],
+    "rejectedCandidateIds": []
+  },
+  "application": {
+    "state": "not_applied",
+    "runRef": null,
+    "revisionRef": null
+  },
+  "projection": {
+    "canvasRef": "private-vault://90_지도/08-협업-MVP-v0.1.canvas",
+    "graphViewSpecRef": null,
+    "tableRef": "private-vault://03_일/협업-MVP-v0.1.md"
+  }
+}
