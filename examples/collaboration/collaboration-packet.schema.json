@@ -26,7 +26,7 @@
         "ref": {"type": "string", "minLength": 1},
         "mediaType": {"type": "string", "minLength": 1},
         "sourceOfTruth": {"type": "string", "minLength": 1},
-        "accessState": {"enum": ["known_accessible", "known_inaccessible", "unknown_access", "missing"]},
+        "accessState": {"enum": ["known_accessible", "auth_context_required", "known_inaccessible", "unknown_access", "missing"]},
         "contentState": {"enum": ["verbatim_raw", "redacted_derivative", "source_digest", "external_reference"]},
         "sha256": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"}
       }
