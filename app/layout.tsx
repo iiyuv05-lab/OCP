@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./studio-entry.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ocp-reality-map-jiyoung.plum-tetra-3335.chatgpt.site"),
@@ -30,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>{children}<a className="studio-v8-entry" href="/studio" title="REP 원문 → BU 보존 → OCP 구현 작업공간">OCP Studio v8 ↗</a></body>
     </html>
   );
 }

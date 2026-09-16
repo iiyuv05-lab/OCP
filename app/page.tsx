@@ -1841,7 +1841,7 @@ export function OcpApp({ initialView = "home" }: { initialView?: AppView }) {
         projection: "product-project",
         gate: "auto",
         timelineIndex: 3,
-      }, ...current].slice(0, 50));
+      } satisfies FeedEvent, ...current].slice(0, 50));
       setObservation("");
       setSourceFile(null);
       setSourceLink("");

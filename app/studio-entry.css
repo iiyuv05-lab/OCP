@@ -1,0 +1,1 @@
+.studio-v8-entry{position:fixed;bottom:12px;right:16px;z-index:30;padding:8px 12px;border-radius:8px;border:1px solid #98ad8c;background:#101c16;color:#d7e8c1;font:12px system-ui;text-decoration:none}body:has(.ocp-studio) .studio-v8-entry{display:none}
