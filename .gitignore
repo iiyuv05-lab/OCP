@@ -43,3 +43,10 @@ yarn-error.log*
 # Harness Baseline v1 keeps run artifacts locally and uploads them from CI.
 /.ocp/evidence/runs/
 /.ocp/attestations/runs/
+
+# OCP Studio private state and local evidence
+/private/
+/.studio-backup/
+/.studio-evidence/
+*.sqlite
+*.sqlite-*
