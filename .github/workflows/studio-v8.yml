@@ -25,26 +25,27 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: Reconcile interrupted source
+      - name: Reconcile approved integration source
         run: |
           node scripts/studio/normalize-source-once.mjs
           node scripts/studio/resume-v8.mjs
+          node scripts/studio/finalize-plmag.mjs
           npx --yes prettier@3.7.3 --single-quote --write 'public/ocp-studio/*.mjs' 'lib/studio/*.mjs' 'scripts/studio/*.mjs' 'tests/studio/*.mjs'
           node scripts/studio/normalize-source-once.mjs
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .gitignore app/page.tsx public/ocp-studio lib/studio scripts/studio tests/studio docs/STUDIO-V8-SOURCE-MANIFEST.json tsconfig.json
-          git diff --cached --quiet || git commit -m 'fix: reconcile v8 source and generated runtime typing [skip ci]'
+          git diff --cached --quiet || git commit -m 'fix: reconcile byte-exact REP and namespaced Plmag integration [skip ci]'
           git push origin HEAD:integration/ocp-v8-20260917
-      - name: Semantic and persistence tests
+      - name: Semantic, namespace and persistence tests
         run: |
           mkdir -p .studio-evidence
-          node --test tests/studio/core.test.mjs 2>&1 | tee .studio-evidence/v8-tests.log
+          node --test tests/studio/*.test.mjs 2>&1 | tee .studio-evidence/v8-tests.log
       - name: Lint
         run: npm run lint 2>&1 | tee .studio-evidence/lint.log
       - name: Native OCP build and existing tests
         run: npm test 2>&1 | tee .studio-evidence/baseline-tests.log
-      - name: Generate types for the exact built runtime
+      - name: Generate types for exact built runtime
         run: npx wrangler types worker-configuration.d.ts --config dist/server/wrangler.json
       - name: Typecheck
         run: npx tsc --noEmit 2>&1 | tee .studio-evidence/typecheck.log
@@ -68,12 +69,3 @@ jobs:
           name: ocp-v8-source-and-evidence
           path: /tmp/ocp-v8-evidence
           retention-days: 14
-      - name: Portable public runtime for offline private-data verification
-        if: success()
-        run: tar -czf /tmp/ocp-v8-linux-runtime.tar.gz node_modules dist worker-configuration.d.ts
-      - uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: ocp-v8-linux-runtime
-          path: /tmp/ocp-v8-linux-runtime.tar.gz
-          retention-days: 3
