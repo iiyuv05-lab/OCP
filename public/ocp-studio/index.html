@@ -1,2 +1,24 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OCP · Product Studio v8</title><link rel="stylesheet" href="/ocp-studio/style.css"><style>html,body{margin:0;height:100%;background:#101714}</style></head><body><div id="studio"></div><script type="module">import { mount } from '/ocp-studio/app.mjs'; window.studio = await mount(document.querySelector('#studio'));</script></body></html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>OCP · Product Studio v8</title>
+    <link rel="stylesheet" href="/ocp-studio/style.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #101714;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="studio"></div>
+    <script type="module">
+      import { mount } from "/ocp-studio/app.mjs";
+      window.studio = await mount(document.querySelector("#studio"));
+    </script>
+  </body>
+</html>
