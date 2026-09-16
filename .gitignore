@@ -50,3 +50,6 @@ yarn-error.log*
 /.studio-evidence/
 *.sqlite
 *.sqlite-*
+
+# Generated from the exact built Worker configuration
+worker-configuration.d.ts
