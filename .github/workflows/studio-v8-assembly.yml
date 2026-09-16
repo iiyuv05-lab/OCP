@@ -1,0 +1,65 @@
+name: Reviewed v8 assembly integration
+on:
+  push:
+    branches: ['integration/ocp-v8-assembly-20260917']
+  workflow_dispatch:
+permissions:
+  contents: write
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: ocp-v8-assembly
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/ocp-v8-assembly-20260917
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Apply source-only assembly refinement
+        run: |
+          node scripts/studio/complete-assembly.mjs
+          npx --yes prettier@3.7.3 --single-quote --write 'public/ocp-studio/*.mjs' 'scripts/studio/*.mjs' 'tests/studio/*.mjs'
+          node scripts/studio/normalize-source-once.mjs
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/ocp-studio scripts/studio tests/studio docs/STUDIO-V8-SOURCE-MANIFEST.json
+          git diff --cached --quiet || git commit -m 'feat: apply approved nested assembly without replacing upstream REP logic [skip ci]'
+          git push origin HEAD:integration/ocp-v8-assembly-20260917
+      - name: Semantic tests
+        run: |
+          mkdir -p .studio-evidence
+          node --test tests/studio/*.test.mjs 2>&1 | tee .studio-evidence/semantic.log
+      - name: Lint
+        run: npm run lint 2>&1 | tee .studio-evidence/lint.log
+      - name: Build and baseline tests
+        run: npm test 2>&1 | tee .studio-evidence/baseline.log
+      - name: Types
+        run: |
+          npx wrangler types worker-configuration.d.ts --config dist/server/wrangler.json
+          npx tsc --noEmit 2>&1 | tee .studio-evidence/typecheck.log
+      - run: npx playwright install --with-deps chromium
+      - name: Native Worker D1 R2 browser acceptance
+        run: node tests/studio/native-runtime.mjs 2>&1 | tee .studio-evidence/native.log
+      - name: Source evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/v8-assembly
+          git archive --format=tar HEAD | gzip > /tmp/v8-assembly/ocp-source.tar.gz
+          git rev-parse HEAD > /tmp/v8-assembly/source-revision.txt
+          cp -r .studio-evidence /tmp/v8-assembly/evidence || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocp-v8-assembly-evidence
+          path: /tmp/v8-assembly
+          retention-days: 14
