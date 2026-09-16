@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Reconcile inspected concurrent changes
+        run: bash scripts/studio/reconcile-reviewed-upstream.sh
       - run: npm ci
       - name: Reconcile approved integration source
         run: |
@@ -32,6 +34,7 @@ jobs:
           node scripts/studio/finalize-plmag.mjs
           python3 scripts/studio/fix-lineage-anchor.py
           python3 scripts/studio/lineage-refinement.py
+          node scripts/studio/finalize-ui.mjs
           npx --yes prettier@3.7.3 --single-quote --write 'public/ocp-studio/*.mjs' 'lib/studio/*.mjs' 'scripts/studio/*.mjs' 'tests/studio/*.mjs'
           node scripts/studio/normalize-source-once.mjs
           git config user.name 'github-actions[bot]'
