@@ -1,4 +1,4 @@
-/** Real browser acceptance of editable OCP. Isolated local profile; not cloud account tests. */
+/** Real browser acceptance. Local profile; not production account tests. */
 import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -84,8 +84,7 @@ try {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'HTML 내려받기', exact: true }).click();
   const download = await downloadPromise;
-  const downloaded = await readFile(await download.path(), 'utf8');
-  assert.equal(downloaded, code.body);
+  assert.equal(await readFile(await download.path(), 'utf8'), code.body);
   record('HTML 내려받기의 실제 바이트가 저장된 코드와 일치한다');
   await page.evaluate(id => window.workbench.app.inspect(id), raw.id);
   await page.getByRole('button', { name: '새 버전 작성', exact: true }).click();
@@ -112,8 +111,8 @@ try {
   record('구름은 복제 대신 원문 ID 두 개를 직접 포함한다');
   const exportPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'BU 백업', exact: true }).click();
-  const exported = await exportPromise; const backupPath = await exported.path();
-  const bundle = JSON.parse(await readFile(backupPath, 'utf8'));
+  const exported = await exportPromise;
+  const bundle = JSON.parse(await readFile(await exported.path(), 'utf8'));
   assert.ok(bundle.objects.some(o => o.key.startsWith('attachment/')));
   assert.ok(bundle.objects.some(o => o.key.startsWith('events/')));
   const fresh = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -123,7 +122,7 @@ try {
   await mobile.waitForFunction(() => !!window.workbench);
   await mobile.getByRole('button', { name: '구조 메뉴', exact: true }).click();
   await mobile.getByRole('button', { name: '가져오기', exact: true }).click();
-  await mobile.locator('.workbench-dialog input[type=file]').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(bundle))});
+  await mobile.locator('.workbench-dialog input[type=file]').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bundle)) });
   await mobile.locator('.workbench-dialog input[name=confirm]').check();
   await mobile.locator('.workbench-dialog [type=submit]').click();
   await mobile.waitForFunction(id => window.workbench.app.getState().graph.nodes.some(n => n.id === id), cloud.id);
@@ -131,27 +130,30 @@ try {
   assert.ok(await mobile.evaluate(id => window.workbench.app.getState().graph.nodes.some(n => n.id === id), cloud.id));
   record('모바일 새 프로필에서 백업을 복원하고 재시작해도 원문과 구름을 보존한다');
   await mobile.screenshot({ path: out + '/mobile-workspace.png' });
-  const other = await context.newPage(); await other.goto(url, {waitUntil:'networkidle'}); await other.waitForFunction(()=>!!window.workbench);
+  const other = await context.newPage(); await other.goto(url, { waitUntil: 'networkidle' }); await other.waitForFunction(() => !!window.workbench);
   const revision = (await state()).revision;
-  const concurrent = await Promise.all([page, other].map((p,i) => p.evaluate(async ({revision,i}) => {
-    try { await window.workbench.store.command({id:'concurrent-command-'+i,expectedRevision:revision,type:'capture',payload:{title:'Concurrent '+i,body:'CAS check'}});return 'saved'; }
-    catch(error){return error.code;}
-  }, {revision,i})));
-  assert.equal(concurrent.filter(x=>x==='saved').length,1);
+  const concurrent = await Promise.all([page, other].map((p, i) => p.evaluate(async ({ revision, i }) => {
+    try { await window.workbench.store.command({ id: 'concurrent-command-' + i, expectedRevision: revision, type: 'capture', payload: { title: 'Concurrent ' + i, body: 'CAS check' } }); return 'saved'; }
+    catch (error) { return error.code; }
+  }, { revision, i })));
+  assert.equal(concurrent.filter(x => x === 'saved').length, 1);
   record('두 탭의 동시 변경에서 한 건만 저장하며 오래된 버전을 덮어쓰지 않는다');
-  await page.locator('.stage').click({position:{x:300,y:200}});
+  // Use the ordinary close control: the inspector intentionally covers part of the canvas.
+  if (await page.locator('[data-action=close-panel]').isVisible()) {
+    await page.locator('[data-action=close-panel]').click();
+  }
+  await page.locator('.stage').click({ position: { x: 500, y: 250 } });
   await page.keyboard.press('3');
-  await page.waitForFunction(()=>document.querySelector('[data-action=journey]').classList.contains('active'));
+  await page.waitForFunction(() => document.querySelector('[data-action=journey]').classList.contains('active'));
   record('실제 브라우저의 숫자 3 단축키로 사용자 대칭 여정을 전환한다');
-  await page.locator('[data-action=close-panel]').click().catch(()=>{});
   await page.locator('[data-action=pipeline]').click(); await page.locator('[data-action=fit]').click();
-  await page.screenshot({path:out+'/editable-workspace.png'});
-  assert.equal(errors.length,0,errors.join('\n'));
+  await page.screenshot({ path: out + '/editable-workspace.png' });
+  assert.equal(errors.length, 0, errors.join('\n'));
   record('브라우저 예외 0건');
-  await writeFile(out+'/report.json',JSON.stringify({scope:'actual browser UI + IndexedDB; no cloud or production identity',checks,errors},null,2));
-  console.log(JSON.stringify({passed:checks.length,scope:'editable browser workspace'}));
+  await writeFile(out + '/report.json', JSON.stringify({ scope: 'actual browser UI + IndexedDB; no cloud or production identity', checks, errors }, null, 2));
+  console.log(JSON.stringify({ passed: checks.length, scope: 'editable browser workspace' }));
   await fresh.close(); await context.close();
-} catch(error) {
-  await writeFile(out+'/report.json',JSON.stringify({checks,errors,failure:String(error)},null,2));
+} catch (error) {
+  await writeFile(out + '/report.json', JSON.stringify({ checks, errors, failure: String(error) }, null, 2));
   throw error;
-} finally { await browser.close(); await new Promise(resolve=>server.close(resolve)); }
+} finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
