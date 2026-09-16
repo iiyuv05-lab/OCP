@@ -1,0 +1,74 @@
+name: OCP editable workspace acceptance
+on:
+  push:
+    branches: ['implementation/ocp-v81-editable-20260917']
+  workflow_dispatch:
+permissions:
+  contents: write
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: ocp-v81-editable
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: implementation/ocp-v81-editable-20260917
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Import exact public-code-only implementation
+        if: hashFiles('public/ocp-studio/browser-store.mjs') == ''
+        env:
+          CODE_URL: 'https://sdmntprkoreacentral.oaiusercontent.com/files/00000000-b11c-8206-8270-57dd9a966563/raw?se=2026-09-16T21%3A23%3A56Z&sp=r&sv=2026-02-06&sr=b&scid=8a711952-b3bb-549b-a5dd-87d4700d42f9&skoid=03727f49-62d3-42ac-8350-1c0e6559d238&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-16T20%3A14%3A36Z&ske=2026-09-17T20%3A14%3A36Z&sks=b&skv=2026-02-06&sig=MrDQ/wWA2uLYrHwHkRfFcteG6NGqC2dl0pvMqGGqNSM%3D'
+        run: |
+          curl -fsSL "$CODE_URL" -o /tmp/editor-code.tar.gz
+          echo '7ce6fe138602fd7a72da8a3e9031d2580e9a20a1bd141ef47834a2bbfe15a13f  /tmp/editor-code.tar.gz' | sha256sum -c -
+          python3 - <<'PY'
+          import tarfile, pathlib, json, hashlib
+          allowed = {'public/ocp-studio/'+n for n in ['core.mjs','app.mjs','browser-store.mjs','workbench.mjs','workbench.css','browser.html','catalog-seed.mjs']}
+          allowed.update(['tests/studio/editable-browser.mjs','tests/studio/cloud.test.mjs','docs/STUDIO-V81-TRANSFER.json'])
+          with tarfile.open('/tmp/editor-code.tar.gz') as t:
+              assert len(t.getmembers()) == 10
+              for m in t.getmembers():
+                  assert m.isfile() and m.name in allowed and m.size < 100000
+              t.extractall('.',filter='data')
+          manifest=json.loads(pathlib.Path('docs/STUDIO-V81-TRANSFER.json').read_text())
+          for file,hash in manifest.items():
+              assert hashlib.sha256(pathlib.Path(file).read_bytes()).hexdigest()==hash
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/ocp-studio tests/studio docs/STUDIO-V81-TRANSFER.json
+          git commit -m 'feat: add editable OCP browser adapter, raw files, clouds and verified backups [skip ci]'
+          git push origin HEAD:implementation/ocp-v81-editable-20260917
+      - run: npm ci
+      - name: Semantic tests
+        run: mkdir -p .studio-evidence; node --test tests/studio/*.test.mjs 2>&1 | tee .studio-evidence/semantic.log
+      - name: Lint
+        run: npm run lint 2>&1 | tee .studio-evidence/lint.log
+      - name: Existing native build and source regressions
+        run: npm test 2>&1 | tee .studio-evidence/native-baseline.log
+      - run: npx playwright install --with-deps chromium
+      - name: Real editable browser workflow
+        run: node tests/studio/editable-browser.mjs 2>&1 | tee .studio-evidence/editable.log
+      - name: Preserve exact source and evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/ocp-v81-result
+          git archive --format=tar HEAD | gzip > /tmp/ocp-v81-result/source.tar.gz
+          git rev-parse HEAD > /tmp/ocp-v81-result/revision.txt
+          cp -r .studio-evidence /tmp/ocp-v81-result/evidence || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocp-v81-editable-evidence
+          path: /tmp/ocp-v81-result
+          retention-days: 14
