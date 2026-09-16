@@ -1,0 +1,81 @@
+name: V8 verified source intake
+on:
+  push:
+    branches: ['integration/ocp-v8-20260917']
+    paths: ['.github/workflows/studio-v8-intake.yml']
+permissions:
+  contents: write
+concurrency:
+  group: studio-v8-intake
+  cancel-in-progress: false
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/ocp-v8-20260917
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Download exact public-code-only bundle
+        env:
+          SOURCE_URL: 'https://sdmntprkoreacentral.oaiusercontent.com/files/00000000-f734-8206-86e8-ae8fb88bb624/raw?se=2026-09-16T19%3A08%3A32Z&sp=r&sv=2026-02-06&sr=b&scid=766caabc-033a-5490-81a9-486e1b0deea1&skoid=03727f49-62d3-42ac-8350-1c0e6559d238&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-15T23%3A32%3A52Z&ske=2026-09-16T23%3A32%3A52Z&sks=b&skv=2026-02-06&sig=syomUE1CCAVIWd6KRgnb%2BwfReRCFV39a/Hccdkbwzng%3D'
+        run: |
+          curl --fail --silent --show-error --location "$SOURCE_URL" -o /tmp/ocp-v8.tar.gz
+          echo 'dcda293b9a85b247f66133fd12dec11c8e7e360b4b30862913dfda5244aaddb7  /tmp/ocp-v8.tar.gz' | sha256sum -c -
+          python3 - <<'PY'
+          import tarfile, pathlib, hashlib, json
+          allowed = ('public/ocp-studio/', 'lib/studio/', 'app/studio/', 'app/api/studio/', 'adapters/plmag/', 'db/migrations/studio-v8.sql', 'scripts/studio/', 'tests/studio/', 'docs/STUDIO-V8')
+          exact = {'.gitignore', 'app/layout.tsx', 'app/studio-entry.css'}
+          with tarfile.open('/tmp/ocp-v8.tar.gz') as t:
+              members = t.getmembers()
+              assert len(members) == 31 and sum(m.size for m in members) < 500000
+              for m in members:
+                  p = pathlib.PurePosixPath(m.name)
+                  assert m.isfile() and not p.is_absolute() and '..' not in p.parts
+                  assert m.name in exact or m.name.startswith(allowed)
+                  assert not any(x in p.parts for x in ('private', '.env', '.git', 'node_modules'))
+              t.extractall('.', filter='data')
+          manifest = json.loads(pathlib.Path('docs/STUDIO-V8-SOURCE-MANIFEST.json').read_text())
+          for name, digest in manifest.items():
+              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == digest
+          print('Verified public source paths:', len(manifest))
+          PY
+      - name: Commit source before independent validation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .gitignore app/layout.tsx app/studio-entry.css app/studio app/api/studio public/ocp-studio lib/studio adapters/plmag db/migrations/studio-v8.sql scripts/studio tests/studio docs/STUDIO-V8*
+          git commit -m 'feat: integrate canonical OCP Studio with REP and BU adapters [skip ci]'
+          git push origin HEAD:integration/ocp-v8-20260917
+      - run: npm ci
+      - name: Format new source only
+        run: npx --yes prettier@3.7.3 --write 'public/ocp-studio/**/*.{mjs,css,html}' 'lib/studio/*.mjs' 'scripts/studio/*.mjs' 'tests/studio/*.mjs' 'app/studio/*.{tsx,ts}' 'app/api/studio/**/*.ts' 'adapters/plmag/**/*.ts' --ignore-unknown
+      - name: Commit human-readable formatting
+        run: |
+          git add public/ocp-studio lib/studio scripts/studio tests/studio app/studio app/api/studio adapters/plmag
+          git diff --cached --quiet || git commit -m 'style: format v8 source for review [skip ci]'
+          git push origin HEAD:integration/ocp-v8-20260917
+      - name: Verify source and baseline
+        run: |
+          mkdir -p .studio-evidence
+          node --test tests/studio/core.test.mjs 2>&1 | tee .studio-evidence/v8-tests.log
+          npm run lint 2>&1 | tee .studio-evidence/lint.log
+          npm test 2>&1 | tee .studio-evidence/baseline-tests.log
+      - name: Package exact source and evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/v8-result
+          git archive --format=tar HEAD | gzip > /tmp/v8-result/ocp-source.tar.gz
+          git rev-parse HEAD > /tmp/v8-result/source-revision.txt
+          cp -r .studio-evidence /tmp/v8-result/ || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocp-v8-integrated-source-and-evidence
+          path: /tmp/v8-result
+          retention-days: 14
