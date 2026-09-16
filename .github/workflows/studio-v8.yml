@@ -1,7 +1,7 @@
-name: OCP Studio v8 integration
+name: OCP Studio v8 lineage integration
 on:
   push:
-    branches: ['integration/ocp-v8-20260917']
+    branches: ['integration/ocp-v8-lineage-20260917']
   workflow_dispatch:
 permissions:
   contents: write
@@ -9,7 +9,7 @@ defaults:
   run:
     shell: bash
 concurrency:
-  group: ocp-studio-v8-integration
+  group: ocp-studio-v8-lineage
   cancel-in-progress: true
 jobs:
   source-and-tests:
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: integration/ocp-v8-20260917
+          ref: integration/ocp-v8-lineage-20260917
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -36,8 +36,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .gitignore app/page.tsx public/ocp-studio lib/studio scripts/studio tests/studio docs/STUDIO-V8-SOURCE-MANIFEST.json tsconfig.json
-          git diff --cached --quiet || git commit -m 'feat: reconcile approved hierarchy, design parts and native REP message bridge [skip ci]'
-          git push origin HEAD:integration/ocp-v8-20260917
+          git diff --cached --quiet || git commit -m 'feat: reconcile hierarchy, design parts and native REP message bridge [skip ci]'
+          git push origin HEAD:integration/ocp-v8-lineage-20260917
       - name: Semantic, namespace and persistence tests
         run: |
           mkdir -p .studio-evidence
