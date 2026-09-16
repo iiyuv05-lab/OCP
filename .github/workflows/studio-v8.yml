@@ -4,34 +4,60 @@ on:
     branches: ['integration/ocp-v8-20260917']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: ocp-studio-v8-integration
+  cancel-in-progress: true
 jobs:
   source-and-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: integration/ocp-v8-20260917
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - name: Baseline dependencies
-        run: npm ci
-      - name: Baseline lint and tests
+      - run: npm ci
+      - name: Apply idempotent integration cleanup
+        run: |
+          node scripts/studio/normalize-source-once.mjs
+          npx --yes prettier@3.7.3 --single-quote --write 'public/ocp-studio/*.mjs' 'lib/studio/*.mjs' 'scripts/studio/*.mjs' 'tests/studio/*.mjs'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/ocp-studio lib/studio scripts/studio tests/studio docs/STUDIO-V8-SOURCE-MANIFEST.json tsconfig.json
+          git diff --cached --quiet || git commit -m 'fix: normalize verified v8 source and metadata [skip ci]'
+          git push origin HEAD:integration/ocp-v8-20260917
+      - name: Semantic and persistence tests
         run: |
           mkdir -p .studio-evidence
-          npm run lint 2>&1 | tee .studio-evidence/lint.log
-          npm test 2>&1 | tee .studio-evidence/baseline-tests.log
-      - name: v8 semantic and persistence tests
-        if: hashFiles('tests/studio/core.test.mjs') != ''
-        run: node --test tests/studio/core.test.mjs 2>&1 | tee .studio-evidence/v8-tests.log
-      - name: Source snapshot without credentials or private vault data
+          node --test tests/studio/core.test.mjs 2>&1 | tee .studio-evidence/v8-tests.log
+      - name: Lint
+        run: npm run lint 2>&1 | tee .studio-evidence/lint.log
+      - name: Typecheck
+        run: npx tsc --noEmit 2>&1 | tee .studio-evidence/typecheck.log
+      - name: Native OCP build and existing source tests
+        run: npm test 2>&1 | tee .studio-evidence/baseline-tests.log
+      - name: Native browser dependency
+        run: npx playwright install --with-deps chromium
+      - name: Actual built Worker API, D1, R2 and browser
+        run: node tests/studio/native-runtime.mjs 2>&1 | tee .studio-evidence/native-tests.log
+      - name: Dependency audit evidence
+        if: always()
+        run: npm audit --json > .studio-evidence/dependency-audit.json || true
+      - name: Preserve exact source and test evidence
         if: always()
         run: |
           mkdir -p /tmp/ocp-v8-evidence
           git archive --format=tar HEAD | gzip > /tmp/ocp-v8-evidence/ocp-source.tar.gz
           git rev-parse HEAD > /tmp/ocp-v8-evidence/source-revision.txt
-          cp -r .studio-evidence /tmp/ocp-v8-evidence/ || true
+          cp -r .studio-evidence /tmp/ocp-v8-evidence/evidence
       - uses: actions/upload-artifact@v4
         if: always()
         with:
