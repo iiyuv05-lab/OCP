@@ -1,0 +1,40 @@
+name: OCP Studio v8 integration
+on:
+  push:
+    branches: ['integration/ocp-v8-20260917']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Baseline dependencies
+        run: npm ci
+      - name: Baseline lint and tests
+        run: |
+          mkdir -p .studio-evidence
+          npm run lint 2>&1 | tee .studio-evidence/lint.log
+          npm test 2>&1 | tee .studio-evidence/baseline-tests.log
+      - name: v8 semantic and persistence tests
+        if: hashFiles('tests/studio/core.test.mjs') != ''
+        run: node --test tests/studio/core.test.mjs 2>&1 | tee .studio-evidence/v8-tests.log
+      - name: Source snapshot without credentials or private vault data
+        if: always()
+        run: |
+          mkdir -p /tmp/ocp-v8-evidence
+          git archive --format=tar HEAD | gzip > /tmp/ocp-v8-evidence/ocp-source.tar.gz
+          git rev-parse HEAD > /tmp/ocp-v8-evidence/source-revision.txt
+          cp -r .studio-evidence /tmp/ocp-v8-evidence/ || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocp-v8-source-and-evidence
+          path: /tmp/ocp-v8-evidence
+          retention-days: 14
