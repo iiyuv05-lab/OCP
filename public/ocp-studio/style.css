@@ -552,3 +552,10 @@
     animation: none !important;
   }
 }
+
+/* Native host status-class isolation: legacy OCP also styles .status. */
+.ocp-studio .status {
+  display: block; background: transparent; color: var(--text);
+  padding: 12px 0; box-shadow: none; border: 0; border-radius: 0;
+  text-align: left; font-size: 12px; line-height: 1.7; height: auto; width: auto;
+}
