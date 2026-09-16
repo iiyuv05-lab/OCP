@@ -1,6 +1,6 @@
 import { assemble, renderAssembly } from './assembly.mjs';
 /** OCP v8: canonical commands. No coordinates, browser state or network calls. */
-export const VERSION = '8.0.2';
+export const VERSION = '8.1.0';
 export const HIERARCHY = [
   'company',
   'brand',
@@ -367,6 +367,19 @@ export async function execute(before, command, context) {
         semanticReview: 'pending',
       };
     }
+  } else if (command.type === 'cloud') {
+    const title = nonempty(p.title, '구름 이름', 180);
+    fail(Array.isArray(p.members) && p.members.length > 0 && p.members.length <= 100, 'CLOUD_MEMBERS', '원문 또는 메시지를 1–100개 선택하세요.');
+    const members = [...new Set(p.members)];
+    for (const id of members) fail(['raw', 'message'].includes(node(g, id).kind), 'CLOUD_MEMBERS', '구름에는 원문과 메시지만 포함할 수 있습니다.');
+    const id = `cloud:${command.id}`;
+    const n = put(g, make(id, 'cloud', title, ctx, {
+      body: JSON.stringify({ members }), members, status: 'unresolved',
+      source: { system: 'rep-cloud', id: command.id, version: '1' },
+      representations: ['CUI', 'GUI'], bu: { state: 'pending' },
+    }));
+    for (const member of members) edge(g, n.id, member, 'CONTAINS');
+    changed.push(id); result = { id, count: members.length, promoted: false };
   } else if (command.type === 'classify') {
     const n = node(g, p.id);
     fail(n.kind === 'raw', 'TARGET', '원문 캔버스만 2차 분류할 수 있습니다.');

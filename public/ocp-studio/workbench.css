@@ -1,0 +1,17 @@
+.workbench-tools { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 0 18px; margin-bottom: 14px; border-bottom: 1px solid #35453b; }
+.workbench-tools > span { display: inline-flex; gap: 2px; }
+.workbench-tools button { min-height: 34px; }
+.ocp-studio .workbench-alert { position: fixed; z-index: 110; bottom: 70px; left: 50%; transform: translateX(-50%); padding: 12px 20px; max-width: 90vw; background: #d8edcc; color: #182619; border-radius: 10px; box-shadow: 0 10px 36px #0007; }
+.workbench-alert:empty, .workbench-alert[hidden] { display: none; }
+.ocp-studio .workbench-dialog { max-width: 760px; width: calc(100vw - 36px); max-height: 90vh; overflow: auto; }
+.ocp-studio .cloud-choice { display: flex; gap: 10px; align-items: center; padding: 8px; margin: 0; }
+.ocp-studio .cloud-choice input { width: auto; flex: 0 0 auto; }
+.ocp-studio fieldset { border: 1px solid #526354; border-radius: 8px; max-height: 360px; overflow: auto; }
+.workbench-node-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.ocp-studio .cloud-nodes { display: grid; gap: 9px; margin-top: 20px; }
+.ocp-studio .cloud-nodes button { padding: 14px; border: 1px dashed #94af84; border-radius: 18px; white-space: normal; text-align: left; }
+.ocp-studio .cloud-nodes small { display: block; opacity: .7; }
+.ocp-studio .generated-preview { width: 100%; height: 58vh; border: 0; background: #f5f4ef; }
+.ocp-studio .form-error { color: #f6b8a6; }
+.ocp-studio .panel { overflow-y: auto; }
+@media(max-width:700px) { .workbench-tools button { min-height: 40px; } .ocp-studio .workbench-dialog { padding: 18px; } }

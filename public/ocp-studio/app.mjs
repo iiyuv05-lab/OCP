@@ -666,6 +666,9 @@ export async function mount(host, options = {}) {
   return {
     getState: () => state,
     refresh: load,
+    inspect: select,
+    executeCommand: run,
+    setView,
     destroy() {
       renderer.destroy();
       abort.abort();
