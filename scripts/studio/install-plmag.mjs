@@ -1,3 +1,4 @@
+import { namespacedMigration } from '../../lib/studio/plmag-canonical-db.mjs';
 /** Explicit additive source installation; never runs migrations or deploys. */
 import { readFile, writeFile, mkdir, access, copyFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -23,6 +24,8 @@ files.push(
   'lib/studio/canonical-store.mjs',
   'lib/studio/service.mjs',
   'lib/studio/rep-bridge.mjs',
+  'lib/studio/plmag-canonical-db.mjs',
+  'app/api/studio/asset/route.ts',
   'app/studio/page.tsx',
   'app/studio/studio-client.tsx',
 );
@@ -63,6 +66,24 @@ for (const name of [...files, ...adapters]) {
     sha256: createHash('sha256').update(bytes).digest('hex'),
   });
 }
+// Existing BU tables may share canonical table names. Never replace them.
+const sql = namespacedMigration(
+  (await readFile(
+    path.join(root, 'adapters/plmag/canonical-foundation.sql'),
+    'utf8',
+  )) +
+    '\n' +
+    (await readFile(path.join(root, 'db/migrations/studio-v8.sql'), 'utf8')),
+);
+if (apply) {
+  await mkdir(path.join(target, 'studio-migrations'), { recursive: true });
+  await writeFile(
+    path.join(target, 'studio-migrations/0001_ocp_namespaced.sql'),
+    sql,
+  );
+}
+report.canonicalTableNamespace = 'ocp_';
+report.migrationGenerated = 'studio-migrations/0001_ocp_namespaced.sql';
 const notePath = path.join(target, 'app/rep-notes-canvas.tsx'),
   original = await readFile(notePath, 'utf8');
 if (!original.includes('ocp-v8-open-selected')) {

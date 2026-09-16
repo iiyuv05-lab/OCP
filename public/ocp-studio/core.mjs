@@ -273,7 +273,10 @@ export async function execute(before, command, context) {
   let result = {},
     changed = [];
   if (command.type === 'capture') {
-    const body = nonempty(p.body, '원문'),
+    // Preserve raw whitespace and line endings; validation is not a transformation.
+    fail(typeof p.body === 'string', 'INPUT', '원문은 문자열이어야 합니다.');
+    nonempty(p.body, '원문');
+    const body = p.body,
       title = nonempty(p.title || body.slice(0, 90), '제목', 180);
     const sha = await digest(body),
       sourceSystem = [
