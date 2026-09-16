@@ -3,9 +3,17 @@ import { readFile, writeFile } from 'node:fs/promises';
 let path = 'public/ocp-studio/renderer.mjs';
 let text = await readFile(path, 'utf8');
 if (!text.includes('pendingInitialFit')) {
-  text = text.replace('let width = 100,', 'let pendingInitialFit = false;\n  let width = 100,');
-  text = text.replace('    canvas.height = height * devicePixelRatio;\n    dirty = true;', '    canvas.height = height * devicePixelRatio;\n    if (pendingInitialFit) fit();\n    dirty = true;');
-  text = text.replace('  function fit() {\n    if (!scene.placements.length) return;', `  function fit() {
+  text = text.replace(
+    'let width = 100,',
+    'let pendingInitialFit = false;\n  let width = 100,',
+  );
+  text = text.replace(
+    '    canvas.height = height * devicePixelRatio;\n    dirty = true;',
+    '    canvas.height = height * devicePixelRatio;\n    if (pendingInitialFit) fit();\n    dirty = true;',
+  );
+  text = text.replace(
+    '  function fit() {\n    if (!scene.placements.length) return;',
+    `  function fit() {
     if (!scene.placements.length) return;
     // A synchronous adapter can resolve before ResizeObserver runs.
     const bounds = canvas.getBoundingClientRect();
@@ -17,7 +25,8 @@ if (!text.includes('pendingInitialFit')) {
     width = bounds.width;
     height = bounds.height;
     canvas.width = Math.round(width * devicePixelRatio);
-    canvas.height = Math.round(height * devicePixelRatio);`);
+    canvas.height = Math.round(height * devicePixelRatio);`,
+  );
   await writeFile(path, text);
 }
 path = 'public/ocp-studio/app.mjs';
@@ -25,7 +34,9 @@ text = await readFile(path, 'utf8');
 if (!text.includes('const hierarchyRows')) {
   const anchor = "    $('#scope-tree').innerHTML = list\n      .map(";
   if (!text.includes(anchor)) throw new Error('Scope tree anchor changed.');
-  text = text.replace(anchor, `    const known = new Set(list.map(n => n.id));
+  text = text.replace(
+    anchor,
+    `    const known = new Set(list.map(n => n.id));
     const children = new Map();
     const parented = new Set();
     for (const e of state.graph.edges) {
@@ -45,7 +56,8 @@ if (!text.includes('const hierarchyRows')) {
     for (const n of list.filter(n => !parented.has(n.id)).sort((a,b) => Number(b.kind === 'company') - Number(a.kind === 'company'))) append(n.id);
     for (const n of list) append(n.id);
     $('#scope-tree').innerHTML = hierarchyRows
-      .map(`);
+      .map(`,
+  );
   await writeFile(path, text);
 }
 path = 'public/ocp-studio/style.css';
@@ -60,4 +72,6 @@ if (!text.includes('Native host status-class isolation')) {
 `;
   await writeFile(path, text);
 }
-console.log('Initial viewport measured, logical scope tree ordered, legacy CSS isolated.');
+console.log(
+  'Initial viewport measured, logical scope tree ordered, legacy CSS isolated.',
+);
