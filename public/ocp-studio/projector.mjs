@@ -82,7 +82,7 @@ export function project(g, opts = {}) {
     lens = opts.lens || 'ALL';
   const scoped = descendants(g, scope),
     associations = new Set(scoped);
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 8; i++)
     for (const e of g.edges)
       if (
         associations.has(e.from) &&
@@ -95,6 +95,15 @@ export function project(g, opts = {}) {
           'PUBLISHED_AT',
           'HAS_REPRESENTATION',
           'APPLIES',
+          'CONTAINS',
+          'HAS_SURFACE',
+          'RECORDED_AT',
+          'HAS_SOURCE_ROOT',
+          'STORED_IN',
+          'HAS_VAULT',
+          'REFERENCES',
+          'STORES',
+          'REPRESENTED_IN',
         ].includes(e.predicate)
       )
         associations.add(e.to);
@@ -281,7 +290,9 @@ export function project(g, opts = {}) {
         ['raw', 'decision', 'message', 'cloud'].includes(n.kind),
       );
     candidates = candidates.filter(
-      (n) => !['folder', 'file', 'element'].includes(n.kind),
+      (n) =>
+        n.kind !== 'folder' &&
+        (!['file', 'element'].includes(n.kind) || n.tiers.length > 0),
     );
     const groups = new Map();
     for (const n of candidates) {
