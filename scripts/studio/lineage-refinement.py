@@ -60,7 +60,7 @@ if "export const VERSION = '8.0.1';" not in text:
 path = root / 'public/ocp-studio/projector.mjs'
 text = path.read_text()
 if "'REPRESENTED_IN'" not in text:
-    text = replace(text, 'for (let i = 0; i < 3; i++)', 'for (let i = 0; i < 8; i++)')
+    text = text.replace('for (let i = 0; i < 3; i++)', 'for (let i = 0; i < 8; i++)', 1)
     text = replace(text, "          'APPLIES',", "          'APPLIES', 'CONTAINS', 'HAS_SURFACE', 'RECORDED_AT', 'HAS_SOURCE_ROOT', 'STORED_IN', 'HAS_VAULT', 'REFERENCES', 'STORES', 'REPRESENTED_IN',")
     text = replace(text, "(n) => !['folder', 'file', 'element'].includes(n.kind),", "(n) => n.kind !== 'folder' && (!['file', 'element'].includes(n.kind) || n.tiers.length > 0),")
     path.write_text(text)
