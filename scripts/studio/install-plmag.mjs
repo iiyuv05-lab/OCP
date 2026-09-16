@@ -15,6 +15,7 @@ await access(path.join(target, 'app/rep-notes-canvas.tsx'));
 await access(path.join(target, 'lib/note-canvas.ts'));
 const files = [
   'core.mjs',
+  'assembly.mjs',
   'projector.mjs',
   'renderer.mjs',
   'app.mjs',
@@ -104,6 +105,37 @@ if (!original.includes('ocp-v8-open-selected')) {
     originalSha256: createHash('sha256').update(original).digest('hex'),
     operation: 'add-toolbar-command',
   });
+}
+// Bind only the inspected OCP entry, with original bytes retained.
+for (const name of ['lib/product-desk.js', 'lib/plmag-catalog.ts']) {
+  const filename = path.join(target, name),
+    old = await readFile(filename, 'utf8');
+  const previousURL = 'https://ocp-canvas.plum-tetra-3335.chatgpt.site/app/';
+  const needle = name.endsWith('.js')
+    ? "url:'" + previousURL + "'"
+    : "url: '" + previousURL + "'";
+  const replacement = name.endsWith('.js')
+    ? "url:'/studio',legacyURL:'" + previousURL + "'"
+    : "url: '/studio', legacyURL: '" + previousURL + "'";
+  if (old.includes(needle)) {
+    if (apply) {
+      await mkdir(path.join(target, '.studio-backup'), { recursive: true });
+      await writeFile(
+        path.join(target, '.studio-backup/' + path.basename(name)),
+        old,
+        { flag: 'wx' },
+      ).catch((error) => {
+        if (error.code !== 'EEXIST') throw error;
+      });
+      await writeFile(filename, old.replace(needle, replacement));
+    }
+    report.sourceChanged.push({
+      path: name,
+      operation: 'bind-native-OCP-entry',
+      legacyURL: previousURL,
+    });
+  } else if (!old.includes("'/studio'"))
+    throw Error('OCP entry changed; refusing unknown route: ' + name);
 }
 if (apply)
   await writeFile(

@@ -1,0 +1,11 @@
+{
+  "public/ocp-studio/core.mjs": "43c835099aaa7bbd8404248f2d2bd483ec778b2e07345659ddafa29f593bfd72",
+  "public/ocp-studio/app.mjs": "979d8b261d525af42fea706e48fce5c2b6b45574324f189df91b8f0022adf985",
+  "public/ocp-studio/browser-store.mjs": "572eab17b00ff852bfa72a4f5d508ae9822dea8c2eaf5ad0a57a57ee7b807ed6",
+  "public/ocp-studio/workbench.mjs": "576a27897e2b17117d3355ce1184622b9367d2e5abd4f16f0c2727afc836dc75",
+  "public/ocp-studio/workbench.css": "66fa89686347fdb32842ea961feb58f209b76881f1b80d78367386a8949c00d4",
+  "public/ocp-studio/browser.html": "eb8cbce0f0f7b28f7f7f2759293f12509dde7fd4aa29c403b24db87f1a8ff440",
+  "public/ocp-studio/catalog-seed.mjs": "bd7ccd7db3a65e2d83bc44f7bf464e366b7f00370300278afe1356a576912126",
+  "tests/studio/editable-browser.mjs": "a96f474356916d24956a959afc2eb08aee4aee2592caa5994c65a4ee285f7d86",
+  "tests/studio/cloud.test.mjs": "62484071a1fc7e037deb7e0037d5990787caf5442c96ea149ef7dd1f0d2031e1"
+}

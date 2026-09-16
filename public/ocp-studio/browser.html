@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OCP 작업공간 · 편집 실행본</title><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./workbench.css"><style>html,body{height:100%;margin:0;background:#101714}</style></head><body><div id="studio"></div><script type="module">
+import { mountWorkbench } from './workbench.mjs';
+import { catalogSeed } from './catalog-seed.mjs';
+try { window.workbench = await mountWorkbench(document.querySelector('#studio'), { seed: catalogSeed }); }
+catch(error) { document.querySelector('#studio').textContent = '작업공간을 열지 못했습니다: ' + error.message; }
+</script></body></html>

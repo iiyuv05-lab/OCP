@@ -1,4 +1,11 @@
-import { emptyGraph, TIERS, HIERARCHY, escapeHTML as esc } from './core.mjs';
+import {
+  emptyGraph,
+  TIERS,
+  HIERARCHY,
+  digest,
+  designToHTML,
+  escapeHTML as esc,
+} from './core.mjs';
 import { project, breadcrumb, sourceRelations } from './projector.mjs';
 import { createRenderer } from './renderer.mjs';
 const safeURL = (value) => {
@@ -106,7 +113,7 @@ export async function mount(host, options = {}) {
   const ctl = (id, label, tip, extra = '') =>
     `<span class="hint-control"><button data-action="${id}" data-tip="${esc(tip)}" ${extra}>${label}</button><button class="help" data-help="${id}" aria-label="${esc(tip)} 도움말">?</button></span>`;
   host.innerHTML = `<header><button class="mobile-menu" data-action="menu" aria-label="구조 메뉴">☰</button><i class="logo-line" aria-hidden="true"></i><div class="wordmark">OCP <small>PRODUCT STUDIO / 08</small></div><span class="env" id="env">정본 연결 확인 중</span>${ctl('capture', '＋ 원문', 'REP 원문 입력')}<button data-action="sync" data-tip="현재 REP 노트·구름 캔버스 연결">REP 연결</button><button class="help" data-help="sync" aria-label="REP 연결 도움말">?</button></header>
- <div class="workspace"><aside><div class="section-label">ONE GRAPH · THREE SYSTEMS</div><div class="row"><span class="pill">REP · 판단</span><span class="pill">BU · 보존</span><span class="pill">OCP · 구현</span></div><input class="tree-search" aria-label="캔버스 검색" placeholder="파일 · 문서 · 객체 검색"><div id="scope-tree"></div><div class="section-label">WORK COORDINATE</div><select id="tier" aria-label="업무 단계"><option value="">모든 업무 단계</option>${[
+ <div class="workspace"><aside><div class="section-label">ONE GRAPH · THREE SYSTEMS</div><div class="row"><span class="pill">REP · 판단</span><span class="pill">BU · 보존</span><span class="pill">OCP · 구현</span></div><input class="tree-search" aria-label="캔버스 검색" placeholder="파일 · 문서 · 객체 검색"><div id="scope-tree"></div><div class="section-label">BU · SOURCE ROOTS</div><div id="source-roots"></div><div class="section-label">WORK COORDINATE</div><select id="tier" aria-label="업무 단계"><option value="">모든 업무 단계</option>${[
    ...TIERS,
  ]
    .reverse()
@@ -140,7 +147,8 @@ export async function mount(host, options = {}) {
       $('#stats').textContent =
         `r${state.graph.revision} · 화면 ${info.visible} / 투영 ${info.total} · 정본 ${state.graph.nodes.length}개`;
     },
-    resolveImage: (src) => options.images?.[src] || '/' + src,
+    resolveImage: (src) =>
+      options.images?.[src] || (src.startsWith('/') ? src : '/' + src),
   });
   function toast(text, error = false) {
     $('#toast-slot').innerHTML =
@@ -194,6 +202,21 @@ export async function mount(host, options = {}) {
       .map(
         (n) =>
           `<button class="scope ${n.kind} ${n.id === state.scope ? 'active' : ''}" data-scope="${esc(n.id)}">${n.kind === 'company' ? '◇ ' : n.kind === 'brand' ? '▧ ' : '↳ '}${esc(n.title)}</button>`,
+      )
+      .join('');
+    $('#source-roots').innerHTML = state.graph.nodes
+      .filter(
+        (n) =>
+          (n.kind === 'folder' && n.source?.path === '.') ||
+          (n.kind === 'folder' &&
+            n.physicalHierarchy &&
+            !state.graph.edges.some(
+              (e) => e.predicate === 'CONTAINS' && e.to === n.id,
+            )),
+      )
+      .map(
+        (n) =>
+          `<button class="scope" data-source-root="${esc(n.id)}">▤ ${esc(n.title)}</button>`,
       )
       .join('');
     const count = (kind) =>
@@ -315,14 +338,58 @@ export async function mount(host, options = {}) {
       actions += '<button data-command="children">내부 캔버스 열기</button>';
     const relations = sourceRelations(state.graph, id);
     $('#detail-slot').innerHTML =
-      `<section class="panel"><button class="close" data-action="close-panel" aria-label="상세 닫기">×</button><div class="section-label">${esc(n.kind.toUpperCase())} · ${esc(n.id)}</div><h2>${esc(n.title)}</h2><div class="lineage">${esc(breadcrumb(state.graph, id).join(' / '))}</div><p>${esc(n.status)} <span class="pill">${esc(n.model || 'observed')} / ${esc(n.stateKind || 'unknown')}</span></p>${n.readiness ? '<pre>' + esc(JSON.stringify(n.readiness, null, 2)) + '</pre>' : ''}<div>${n.tiers.map((t) => '<span class="pill">' + esc(t) + ' ' + esc(TIERS.find((x) => x[0] === t)?.[1]) + '</span>').join('') || '<span class="pill">업무 분류 미검토</span>'}</div>${n.body ? '<pre>' + esc(n.body.slice(0, 9000)) + '</pre>' : ''}${n.spec ? '<pre>' + esc(JSON.stringify(n.spec, null, 2)) + '</pre>' : ''}${n.kind === 'code' ? '<iframe title="생성된 실제 화면" sandbox></iframe>' : ''}${n.url ? '<p><a href="' + esc(safeURL(n.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(safeURL(n.url)) + '</a></p>' : ''}<div class="actions">${actions}<button data-command="message">REP 메시지</button><button data-command="lineage">관련 연결</button></div><h3>출처 · 상태</h3><pre>${esc(JSON.stringify(n.source || { note: '이 작업에서 생성된 산출물' }, null, 2))}</pre><h3>관계 ${relations.length}개</h3><div class="lineage">${relations
+      `<section class="panel"><button class="close" data-action="close-panel" aria-label="상세 닫기">×</button><div class="section-label">${esc(n.kind.toUpperCase())} · ${esc(n.id)}</div><h2>${esc(n.title)}</h2><div class="lineage">${esc(breadcrumb(state.graph, id).join(' / '))}</div><p>${esc(n.status)} <span class="pill">${esc(n.model || 'observed')} / ${esc(n.stateKind || 'unknown')}</span></p>${n.readiness ? '<pre>' + esc(JSON.stringify(n.readiness, null, 2)) + '</pre>' : ''}<div>${n.tiers.map((t) => '<span class="pill">' + esc(t) + ' ' + esc(TIERS.find((x) => x[0] === t)?.[1]) + '</span>').join('') || '<span class="pill">업무 분류 미검토</span>'}</div>${n.body ? '<pre>' + esc(n.body.slice(0, 9000)) + '</pre>' : ''}${n.spec ? '<pre>' + esc(JSON.stringify(n.spec, null, 2)) + '</pre>' : ''}${['code', 'design'].includes(n.kind) ? '<iframe title="생성된 실제 화면" sandbox></iframe>' : ''}${n.url ? '<p><a href="' + esc(safeURL(n.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(safeURL(n.url)) + '</a></p>' : ''}<div class="actions">${actions}<button data-command="message">REP 메시지</button><button data-command="lineage">관련 연결</button></div><h3>출처 · 상태</h3><pre>${esc(JSON.stringify(n.source || { note: '이 작업에서 생성된 산출물' }, null, 2))}</pre><h3>관계 ${relations.length}개</h3><div class="lineage">${relations
         .slice(0, 14)
         .map(
           (e) => esc(e.predicate) + ' → ' + esc(e.from === id ? e.to : e.from),
         )
         .join('<br>')}</div></section>`;
     if (n.kind === 'code') $('#detail-slot iframe').srcdoc = n.body;
+    if (n.kind === 'design') $('#detail-slot iframe').srcdoc = designToHTML(n);
     $('#detail-slot').dataset.node = JSON.stringify(n);
+  }
+  async function recordNativeREPMessage(target, payload) {
+    const identity = await digest(state.actor.id + ':' + target.id);
+    const token = identity.slice(0, 32);
+    const channelId = [
+      token.slice(0, 8),
+      token.slice(8, 12),
+      token.slice(12, 16),
+      token.slice(16, 20),
+      token.slice(20),
+    ].join('-');
+    const messageId = crypto.randomUUID();
+    const send = (body) =>
+      request('/api/messages', { method: 'POST', body: JSON.stringify(body) });
+    await send({
+      action: 'channel.create',
+      id: channelId,
+      name: 'OCP · ' + target.id.slice(-60),
+      category: 'OCP 구현',
+    });
+    await send({
+      action: 'message.send',
+      id: messageId,
+      channelId,
+      text:
+        (payload.agentRequest
+          ? '[에이전트 작업 제안 · 아직 실행하지 않음]\n'
+          : '') + payload.body,
+    });
+    await api.rep({ channelId, skipNotes: true });
+    await load();
+    const raw = state.graph.nodes.find(
+      (x) => x.source?.system === 'rep-message' && x.source?.id === messageId,
+    );
+    if (!raw)
+      throw new Error(
+        'REP에는 기록됐으나 OCP 참조를 아직 확인하지 못했습니다. 같은 채널의 연결을 다시 확인하세요.',
+      );
+    await run('relate', { from: raw.id, to: target.id, predicate: 'ABOUT' });
+    await select(raw.id);
+    toast(
+      '기존 REP 채널과 BU 보존, OCP 대상 연결을 확인했습니다. AI 실행은 별도입니다.',
+    );
   }
   async function commandUI(type) {
     const n = JSON.parse($('#detail-slot').dataset.node || 'null');
@@ -353,7 +420,7 @@ export async function mount(host, options = {}) {
     if (type === 'review')
       modal(
         'REP · 승격 판정',
-        `<p>자동 승격하지 않습니다. 원문과 완료 기준을 검토해 승인하고, 적용은 다음 단계에서 별도로 실행합니다.</p><label>상위 객체</label><select name="parentId">${state.graph.nodes
+        `<p>자동 승격하지 않습니다. 원문과 완료 기준을 검토해 승인하고, 적용은 다음 단계에서 별도로 실행합니다.</p><label>상위 객체</label><select name="parentId"><option value="">새 컴퍼니 · 최상위</option>${state.graph.nodes
           .filter((x) => HIERARCHY.includes(x.kind) && x.kind !== 'atom')
           .map(
             (x) =>
@@ -368,7 +435,10 @@ export async function mount(host, options = {}) {
             id: n.id,
             ...p,
             approve: !!p.approve,
-            targetKind: HIERARCHY[HIERARCHY.indexOf(parent.kind) + 1],
+            parentId: p.parentId || null,
+            targetKind: parent
+              ? HIERARCHY[HIERARCHY.indexOf(parent.kind) + 1]
+              : 'company',
             evidenceIds: [n.id],
           });
         },
@@ -377,8 +447,16 @@ export async function mount(host, options = {}) {
     if (type === 'design')
       modal(
         'OCP · GUI 화면 설계',
-        `<p>승격 기획: ${esc(n.title)}. 디자인 데이터와 생성 코드는 같은 ID의 요구사항에 연결됩니다.</p><label>화면 헤드라인</label><input name="heading" value="${esc(n.title)}" required><label>본문</label><textarea name="body" required>${esc(n.body || '')}</textarea><label>CTA 버튼</label><input name="cta" value="시작하기" required><label>세부 내용</label><textarea name="detail"></textarea>`,
-        (p) => run('design', { id: n.id, ...p }),
+        `<p>승격 기획: ${esc(n.title)}. 디자인 데이터와 생성 코드는 같은 ID의 요구사항에 연결됩니다.</p><label>화면 헤드라인</label><input name="heading" value="${esc(n.title)}" required><label>본문</label><textarea name="body" required>${esc(n.body || '')}</textarea><label>CTA 버튼</label><input name="cta" value="시작하기" required><label>세부 내용</label><textarea name="detail"></textarea><label>같은 계층의 승인된 모듈·에셋·아톰 ID (쉼표 구분, 선택)</label><input name="sectionIds" placeholder="work-… , work-…"><small>선택한 기획 객체의 하위 요소만 화면 섹션으로 구성합니다.</small>`,
+        (p) =>
+          run('design', {
+            id: n.id,
+            ...p,
+            sectionIds: String(p.sectionIds || '')
+              .split(',')
+              .map((x) => x.trim())
+              .filter(Boolean),
+          }),
       );
     if (type === 'code') await run('code', { id: n.id });
     if (type === 'request-release')
@@ -402,11 +480,16 @@ export async function mount(host, options = {}) {
         'REP · 작업 메시지',
         `<p>${esc(n.title)}에 연결할 메시지입니다. 에이전트 실행으로 자동 처리하지 않습니다.</p><label>메시지</label><textarea name="body" required></textarea><label class="inline"><input type="checkbox" name="agentRequest">에이전트 작업 제안으로 기록</label>`,
         (p) =>
-          run('message', {
-            targetId: n.id,
-            body: p.body,
-            agentRequest: !!p.agentRequest,
-          }),
+          state.mode === 'plmag-native'
+            ? recordNativeREPMessage(n, {
+                body: p.body,
+                agentRequest: !!p.agentRequest,
+              })
+            : run('message', {
+                targetId: n.id,
+                body: p.body,
+                agentRequest: !!p.agentRequest,
+              }),
       );
   }
   const abort = new AbortController();
@@ -419,6 +502,14 @@ export async function mount(host, options = {}) {
           '조작 가이드',
           `<p>${esc(helpText[help.dataset.help] || '원본 ID와 저장 상태를 유지하며 해당 화면의 조작을 실행합니다.')}</p>`,
         );
+        return;
+      }
+      const sourceRoot = e.target.closest('[data-source-root]');
+      if (sourceRoot) {
+        state.view = 'source';
+        state.fileRoot = sourceRoot.dataset.sourceRoot;
+        $('#detail-slot').innerHTML = '';
+        renderScene();
         return;
       }
       const scope = e.target.closest('[data-scope]');
@@ -575,6 +666,9 @@ export async function mount(host, options = {}) {
   return {
     getState: () => state,
     refresh: load,
+    inspect: select,
+    executeCommand: run,
+    setView,
     destroy() {
       renderer.destroy();
       abort.abort();
