@@ -3,6 +3,7 @@ import {
   TIERS,
   HIERARCHY,
   digest,
+  designToHTML,
   escapeHTML as esc,
 } from './core.mjs';
 import { project, breadcrumb, sourceRelations } from './projector.mjs';
@@ -146,7 +147,8 @@ export async function mount(host, options = {}) {
       $('#stats').textContent =
         `r${state.graph.revision} · 화면 ${info.visible} / 투영 ${info.total} · 정본 ${state.graph.nodes.length}개`;
     },
-    resolveImage: (src) => options.images?.[src] || '/' + src,
+    resolveImage: (src) =>
+      options.images?.[src] || (src.startsWith('/') ? src : '/' + src),
   });
   function toast(text, error = false) {
     $('#toast-slot').innerHTML =
@@ -205,7 +207,7 @@ export async function mount(host, options = {}) {
     $('#source-roots').innerHTML = state.graph.nodes
       .filter(
         (n) =>
-          n.id.startsWith('source:') ||
+          (n.kind === 'folder' && n.source?.path === '.') ||
           (n.kind === 'folder' &&
             n.physicalHierarchy &&
             !state.graph.edges.some(
@@ -336,13 +338,14 @@ export async function mount(host, options = {}) {
       actions += '<button data-command="children">내부 캔버스 열기</button>';
     const relations = sourceRelations(state.graph, id);
     $('#detail-slot').innerHTML =
-      `<section class="panel"><button class="close" data-action="close-panel" aria-label="상세 닫기">×</button><div class="section-label">${esc(n.kind.toUpperCase())} · ${esc(n.id)}</div><h2>${esc(n.title)}</h2><div class="lineage">${esc(breadcrumb(state.graph, id).join(' / '))}</div><p>${esc(n.status)} <span class="pill">${esc(n.model || 'observed')} / ${esc(n.stateKind || 'unknown')}</span></p>${n.readiness ? '<pre>' + esc(JSON.stringify(n.readiness, null, 2)) + '</pre>' : ''}<div>${n.tiers.map((t) => '<span class="pill">' + esc(t) + ' ' + esc(TIERS.find((x) => x[0] === t)?.[1]) + '</span>').join('') || '<span class="pill">업무 분류 미검토</span>'}</div>${n.body ? '<pre>' + esc(n.body.slice(0, 9000)) + '</pre>' : ''}${n.spec ? '<pre>' + esc(JSON.stringify(n.spec, null, 2)) + '</pre>' : ''}${n.kind === 'code' ? '<iframe title="생성된 실제 화면" sandbox></iframe>' : ''}${n.url ? '<p><a href="' + esc(safeURL(n.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(safeURL(n.url)) + '</a></p>' : ''}<div class="actions">${actions}<button data-command="message">REP 메시지</button><button data-command="lineage">관련 연결</button></div><h3>출처 · 상태</h3><pre>${esc(JSON.stringify(n.source || { note: '이 작업에서 생성된 산출물' }, null, 2))}</pre><h3>관계 ${relations.length}개</h3><div class="lineage">${relations
+      `<section class="panel"><button class="close" data-action="close-panel" aria-label="상세 닫기">×</button><div class="section-label">${esc(n.kind.toUpperCase())} · ${esc(n.id)}</div><h2>${esc(n.title)}</h2><div class="lineage">${esc(breadcrumb(state.graph, id).join(' / '))}</div><p>${esc(n.status)} <span class="pill">${esc(n.model || 'observed')} / ${esc(n.stateKind || 'unknown')}</span></p>${n.readiness ? '<pre>' + esc(JSON.stringify(n.readiness, null, 2)) + '</pre>' : ''}<div>${n.tiers.map((t) => '<span class="pill">' + esc(t) + ' ' + esc(TIERS.find((x) => x[0] === t)?.[1]) + '</span>').join('') || '<span class="pill">업무 분류 미검토</span>'}</div>${n.body ? '<pre>' + esc(n.body.slice(0, 9000)) + '</pre>' : ''}${n.spec ? '<pre>' + esc(JSON.stringify(n.spec, null, 2)) + '</pre>' : ''}${['code', 'design'].includes(n.kind) ? '<iframe title="생성된 실제 화면" sandbox></iframe>' : ''}${n.url ? '<p><a href="' + esc(safeURL(n.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(safeURL(n.url)) + '</a></p>' : ''}<div class="actions">${actions}<button data-command="message">REP 메시지</button><button data-command="lineage">관련 연결</button></div><h3>출처 · 상태</h3><pre>${esc(JSON.stringify(n.source || { note: '이 작업에서 생성된 산출물' }, null, 2))}</pre><h3>관계 ${relations.length}개</h3><div class="lineage">${relations
         .slice(0, 14)
         .map(
           (e) => esc(e.predicate) + ' → ' + esc(e.from === id ? e.to : e.from),
         )
         .join('<br>')}</div></section>`;
     if (n.kind === 'code') $('#detail-slot iframe').srcdoc = n.body;
+    if (n.kind === 'design') $('#detail-slot iframe').srcdoc = designToHTML(n);
     $('#detail-slot').dataset.node = JSON.stringify(n);
   }
   async function recordNativeREPMessage(target, payload) {

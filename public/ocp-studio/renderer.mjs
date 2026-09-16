@@ -221,7 +221,33 @@ export function createRenderer(canvas, hooks = {}) {
         ctx.restore();
         continue;
       }
-      if (w < 75 || rw < 40) continue;
+      if (rw < 160 || rh < 85) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x + 4, y + 3, Math.max(0, rw - 8), Math.max(0, rh - 6));
+        ctx.clip();
+        ctx.fillStyle = '#e4eadf';
+        ctx.font = '600 11px system-ui';
+        wrapText(
+          p.flowTitle || p.node.title,
+          x + 7,
+          y + 15,
+          Math.max(10, rw - 14),
+          14,
+          rh >= 42 ? 2 : 1,
+        );
+        if (rh >= 58) {
+          ctx.font = '9px monospace';
+          ctx.fillStyle = tint;
+          ctx.fillText(
+            (p.node.kind || 'canvas').toUpperCase(),
+            x + 7,
+            y + rh - 8,
+          );
+        }
+        ctx.restore();
+        continue;
+      }
       ctx.save();
       ctx.beginPath();
       ctx.rect(x + 5, y + 5, rw - 10, rh - 10);

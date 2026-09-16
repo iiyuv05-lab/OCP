@@ -1,5 +1,6 @@
+import { assemble, renderAssembly } from './assembly.mjs';
 /** OCP v8: canonical commands. No coordinates, browser state or network calls. */
-export const VERSION = '8.0.1';
+export const VERSION = '8.0.2';
 export const HIERARCHY = [
   'company',
   'brand',
@@ -235,7 +236,7 @@ export function designToHTML(design) {
     )
     .join('');
   return `<!doctype html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHTML(d.heading)}</title>\n<style>*{box-sizing:border-box}body{margin:0;background:#f5f4ef;color:#151914;font:16px/1.7 system-ui,sans-serif}header,main,footer{max-width:1050px;margin:auto;padding:36px 24px}header{border-bottom:1px solid #cbd2c5;font-weight:700;letter-spacing:.1em}main{min-height:65vh;padding-top:80px}.eyebrow{font-size:12px;letter-spacing:.18em}h1{font-size:clamp(32px,6vw,70px);line-height:1.14;max-width:850px}p{max-width:650px;white-space:pre-line}a{display:inline-block;background:#233629;color:#fff;padding:14px 22px;border-radius:6px;text-decoration:none}section{margin:52px 0 20px;padding:24px;border:1px solid #cbd2c5;border-radius:12px}footer{font-size:12px;color:#53614f}@media(max-width:600px){main{padding-top:34px}}
-</style></head><body><header>${escapeHTML(d.brand || 'Plus Minus G.')}</header><main><div class="eyebrow">${escapeHTML(d.eyebrow || 'PRODUCT / WORKING DESIGN')}</div><h1>${escapeHTML(d.heading)}</h1><p>${escapeHTML(d.body)}</p><a href="#details">${escapeHTML(d.cta)}</a>${sections}<section id="details"><h2>다음 단계</h2><p>${escapeHTML(d.detail || '이 화면은 승인된 기획과 디자인에서 생성된 실행 가능한 산출물입니다.')}</p></section></main><footer>OCP · ${escapeHTML(design.id)} · 게시 환경의 인증·서버 검증은 별도입니다.</footer></body></html>`;
+.assembly-grid{display:grid;gap:20px}.assembly-part{border:1px solid #ccd5c6;border-radius:10px;padding:20px;background:#fff}.assembly-children{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px}.assembly-kind{font:10px monospace;letter-spacing:.14em;color:#526755}.assembly-part p{font-size:14px}.assembly-part h2,.assembly-part h3,.assembly-part h4{font-size:20px;margin:12px 0}</style></head><body><header>${escapeHTML(d.brand || 'Plus Minus G.')}</header><main><div class="eyebrow">${escapeHTML(d.eyebrow || 'PRODUCT / WORKING DESIGN')}</div><h1>${escapeHTML(d.heading)}</h1><p>${escapeHTML(d.body)}</p><a href="#details">${escapeHTML(d.cta)}</a>${sections}<section id="details"><h2>다음 단계</h2><p>${escapeHTML(d.detail || '이 화면은 승인된 기획과 디자인에서 생성된 실행 가능한 산출물입니다.')}</p></section>${sections ? '' : renderAssembly(d.assembly || [], escapeHTML)}</main><footer>OCP · ${escapeHTML(design.id)} · 게시 환경의 인증·서버 검증은 별도입니다.</footer></body></html>`;
 }
 /** Every command is applied on a clone. Failed checks never mutate the caller. */
 export async function execute(before, command, context) {
@@ -545,6 +546,7 @@ export async function execute(before, command, context) {
       };
     });
     const spec = {
+      assembly: assemble(g, work.id),
       sections,
       heading: nonempty(p.heading, '제목', 180),
       body: nonempty(p.body, '본문', 12000),
