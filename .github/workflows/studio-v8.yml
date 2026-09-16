@@ -25,14 +25,16 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: Apply idempotent integration cleanup
+      - name: Reconcile interrupted source
         run: |
           node scripts/studio/normalize-source-once.mjs
+          node scripts/studio/resume-v8.mjs
           npx --yes prettier@3.7.3 --single-quote --write 'public/ocp-studio/*.mjs' 'lib/studio/*.mjs' 'scripts/studio/*.mjs' 'tests/studio/*.mjs'
+          node scripts/studio/normalize-source-once.mjs
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/ocp-studio lib/studio scripts/studio tests/studio docs/STUDIO-V8-SOURCE-MANIFEST.json tsconfig.json
-          git diff --cached --quiet || git commit -m 'fix: normalize verified v8 source and metadata [skip ci]'
+          git add .gitignore app/page.tsx public/ocp-studio lib/studio scripts/studio tests/studio docs/STUDIO-V8-SOURCE-MANIFEST.json tsconfig.json
+          git diff --cached --quiet || git commit -m 'fix: reconcile v8 source and generated runtime typing [skip ci]'
           git push origin HEAD:integration/ocp-v8-20260917
       - name: Semantic and persistence tests
         run: |
@@ -40,18 +42,20 @@ jobs:
           node --test tests/studio/core.test.mjs 2>&1 | tee .studio-evidence/v8-tests.log
       - name: Lint
         run: npm run lint 2>&1 | tee .studio-evidence/lint.log
+      - name: Native OCP build and existing tests
+        run: npm test 2>&1 | tee .studio-evidence/baseline-tests.log
+      - name: Generate types for the exact built runtime
+        run: npx wrangler types worker-configuration.d.ts --config dist/server/wrangler.json
       - name: Typecheck
         run: npx tsc --noEmit 2>&1 | tee .studio-evidence/typecheck.log
-      - name: Native OCP build and existing source tests
-        run: npm test 2>&1 | tee .studio-evidence/baseline-tests.log
       - name: Native browser dependency
         run: npx playwright install --with-deps chromium
-      - name: Actual built Worker API, D1, R2 and browser
+      - name: Actual built Worker, D1, R2 and browser
         run: node tests/studio/native-runtime.mjs 2>&1 | tee .studio-evidence/native-tests.log
       - name: Dependency audit evidence
         if: always()
-        run: npm audit --json > .studio-evidence/dependency-audit.json || true
-      - name: Preserve exact source and test evidence
+        run: mkdir -p .studio-evidence; npm audit --json > .studio-evidence/dependency-audit.json || true
+      - name: Preserve exact source and evidence
         if: always()
         run: |
           mkdir -p /tmp/ocp-v8-evidence
@@ -64,3 +68,12 @@ jobs:
           name: ocp-v8-source-and-evidence
           path: /tmp/ocp-v8-evidence
           retention-days: 14
+      - name: Portable public runtime for offline private-data verification
+        if: success()
+        run: tar -czf /tmp/ocp-v8-linux-runtime.tar.gz node_modules dist worker-configuration.d.ts
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: ocp-v8-linux-runtime
+          path: /tmp/ocp-v8-linux-runtime.tar.gz
+          retention-days: 3
