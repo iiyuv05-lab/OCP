@@ -151,6 +151,7 @@ try {
   }));
   await command('import', {
     graph: {
+      schema: 'ocp.studio.graph/8',
       nodes,
       edges: [
         {
