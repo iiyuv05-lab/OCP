@@ -12,6 +12,7 @@ export function createRenderer(canvas, hooks = {}) {
       centerY: 0,
       centerZ: 0,
     };
+  let pendingInitialFit = false;
   let width = 100,
     height = 100,
     scene = { placements: [], lines: [] },
@@ -321,6 +322,7 @@ export function createRenderer(canvas, hooks = {}) {
     height = r.height;
     canvas.width = width * devicePixelRatio;
     canvas.height = height * devicePixelRatio;
+    if (pendingInitialFit) fit();
     dirty = true;
   });
   resize.observe(canvas);
@@ -442,6 +444,17 @@ export function createRenderer(canvas, hooks = {}) {
   }
   function fit() {
     if (!scene.placements.length) return;
+    // A synchronous adapter can resolve before ResizeObserver runs.
+    const bounds = canvas.getBoundingClientRect();
+    if (bounds.width < 120 || bounds.height < 120) {
+      pendingInitialFit = true;
+      return;
+    }
+    pendingInitialFit = false;
+    width = bounds.width;
+    height = bounds.height;
+    canvas.width = Math.round(width * devicePixelRatio);
+    canvas.height = Math.round(height * devicePixelRatio);
     const minX = Math.min(...scene.placements.map((p) => p.x - p.width / 2)),
       maxX = Math.max(...scene.placements.map((p) => p.x + p.width / 2)),
       minY = Math.min(...scene.placements.map((p) => p.y - p.height / 2)),

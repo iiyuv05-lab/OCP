@@ -164,7 +164,33 @@ export async function mount(host, options = {}) {
     const list = state.graph.nodes.filter((n) =>
       ['company', 'brand', 'product'].includes(n.kind),
     );
-    $('#scope-tree').innerHTML = list
+    const known = new Set(list.map((n) => n.id));
+    const children = new Map();
+    const parented = new Set();
+    for (const e of state.graph.edges) {
+      if (e.predicate !== 'CONTAINS' || !known.has(e.from) || !known.has(e.to))
+        continue;
+      if (!children.has(e.from)) children.set(e.from, []);
+      children.get(e.from).push(e.to);
+      parented.add(e.to);
+    }
+    const byId = new Map(list.map((n) => [n.id, n]));
+    const hierarchyRows = [],
+      seen = new Set();
+    function append(id) {
+      if (seen.has(id)) return;
+      seen.add(id);
+      hierarchyRows.push(byId.get(id));
+      for (const child of children.get(id) || []) append(child);
+    }
+    for (const n of list
+      .filter((n) => !parented.has(n.id))
+      .sort(
+        (a, b) => Number(b.kind === 'company') - Number(a.kind === 'company'),
+      ))
+      append(n.id);
+    for (const n of list) append(n.id);
+    $('#scope-tree').innerHTML = hierarchyRows
       .map(
         (n) =>
           `<button class="scope ${n.kind} ${n.id === state.scope ? 'active' : ''}" data-scope="${esc(n.id)}">${n.kind === 'company' ? '◇ ' : n.kind === 'brand' ? '▧ ' : '↳ '}${esc(n.title)}</button>`,
