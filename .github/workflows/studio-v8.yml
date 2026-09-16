@@ -30,6 +30,7 @@ jobs:
           node scripts/studio/normalize-source-once.mjs
           node scripts/studio/resume-v8.mjs
           node scripts/studio/finalize-plmag.mjs
+          python3 scripts/studio/fix-lineage-anchor.py
           python3 scripts/studio/lineage-refinement.py
           npx --yes prettier@3.7.3 --single-quote --write 'public/ocp-studio/*.mjs' 'lib/studio/*.mjs' 'scripts/studio/*.mjs' 'tests/studio/*.mjs'
           node scripts/studio/normalize-source-once.mjs
