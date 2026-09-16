@@ -1,7 +1,7 @@
 /** OCP canvas renderer with 3D projection, screen culling and LOD. No DOM per node. */
-import { TIERS } from "./core.mjs";
+import { TIERS } from './core.mjs';
 export function createRenderer(canvas, hooks = {}) {
-  const ctx = canvas.getContext("2d", { alpha: false }),
+  const ctx = canvas.getContext('2d', { alpha: false }),
     camera = {
       yaw: -0.1,
       pitch: 0.06,
@@ -19,7 +19,7 @@ export function createRenderer(canvas, hooks = {}) {
     dirty = true,
     frame,
     drag = null,
-    selected = "",
+    selected = '',
     settings = {
       guides: true,
       billboard: true,
@@ -29,14 +29,14 @@ export function createRenderer(canvas, hooks = {}) {
       gap: 1,
     };
   const colors = [
-    "#dcd7af",
-    "#afcdbd",
-    "#a8c0d7",
-    "#aabce8",
-    "#ceb8e3",
-    "#d5b7bc",
-    "#dac3a8",
-    "#c3d39b",
+    '#dcd7af',
+    '#afcdbd',
+    '#a8c0d7',
+    '#aabce8',
+    '#ceb8e3',
+    '#d5b7bc',
+    '#dac3a8',
+    '#c3d39b',
   ];
   function project(p) {
     const x = p.x - camera.centerX,
@@ -68,10 +68,10 @@ export function createRenderer(canvas, hooks = {}) {
   function draw() {
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     ctx.globalAlpha = 1;
-    ctx.fillStyle = "#101714";
+    ctx.fillStyle = '#101714';
     ctx.fillRect(0, 0, width, height);
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "#1e2924";
+    ctx.strokeStyle = '#1e2924';
     const grid = 40;
     ctx.beginPath();
     for (let x = camera.panX % grid; x < width; x += grid) {
@@ -83,12 +83,12 @@ export function createRenderer(canvas, hooks = {}) {
       ctx.lineTo(width, y);
     }
     ctx.stroke();
-    if (settings.guides && scene.view === "pipeline") {
+    if (settings.guides && scene.view === 'pipeline') {
       for (const [t, label, en] of TIERS) {
         const y = -(Number(t) - 4.5) * 260,
           a = project({ x: -20000, y: y + 126, z: 0 }),
           b = project({ x: 20000, y: y + 126, z: 0 });
-        ctx.strokeStyle = "#344035";
+        ctx.strokeStyle = '#344035';
         ctx.setLineDash([6, 7]);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
@@ -98,10 +98,10 @@ export function createRenderer(canvas, hooks = {}) {
         const p = project({ x: 0, y, z: 0 });
         if (p.y > -80 && p.y < height + 80) {
           ctx.fillStyle = colors[Number(t) - 1];
-          ctx.font = "600 12px system-ui";
+          ctx.font = '600 12px system-ui';
           ctx.fillText(`${t}  ${label}`, 15, p.y - 55);
-          ctx.font = "9px monospace";
-          ctx.fillStyle = "#7c9184";
+          ctx.font = '9px monospace';
+          ctx.fillStyle = '#7c9184';
           ctx.fillText(en, 15, p.y - 39);
         }
       }
@@ -115,12 +115,12 @@ export function createRenderer(canvas, hooks = {}) {
       const a = project(aa),
         b = project(bb);
       ctx.strokeStyle =
-        e.predicate === "CONTAINS"
-          ? "#577862"
-          : e.stateKind === "planned"
-            ? "#455a50"
-            : "#92b59e";
-      ctx.setLineDash(e.stateKind === "planned" ? [5, 5] : []);
+        e.predicate === 'CONTAINS'
+          ? '#577862'
+          : e.stateKind === 'planned'
+            ? '#455a50'
+            : '#92b59e';
+      ctx.setLineDash(e.stateKind === 'planned' ? [5, 5] : []);
       ctx.lineWidth = e.from === selected || e.to === selected ? 2 : 1;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
@@ -155,7 +155,7 @@ export function createRenderer(canvas, hooks = {}) {
       if (c.x + w < 0 || c.y + h < 0 || c.x - w > width || c.y - h > height)
         continue;
       const tint =
-        colors[Number(p.tier || p.node.tiers?.[0] || "02") - 1] || "#b6c8b8";
+        colors[Number(p.tier || p.node.tiers?.[0] || '02') - 1] || '#b6c8b8';
       ctx.globalAlpha = settings.opacity;
       if (w < 14) {
         ctx.fillStyle = tint;
@@ -189,18 +189,18 @@ export function createRenderer(canvas, hooks = {}) {
           x: q.x + Math.sin(camera.yaw) * 14 * camera.zoom,
           y: q.y + Math.sin(camera.pitch) * 14 * camera.zoom,
         }));
-        poly([...points.slice(1, 3), back[2], back[1]], "#526657", tint);
+        poly([...points.slice(1, 3), back[2], back[1]], '#526657', tint);
       }
       ctx.lineWidth = p.entityId === selected ? 2 : 1;
-      ctx.setLineDash(p.node.stateKind === "planned" ? [5, 4] : []);
+      ctx.setLineDash(p.node.stateKind === 'planned' ? [5, 4] : []);
       poly(
         points,
         p.entityId === selected
-          ? "#314438"
-          : p.node.kind === "core"
-            ? "#2f4334"
-            : "#1c2922",
-        p.entityId === selected ? "#d8ecc9" : tint,
+          ? '#314438'
+          : p.node.kind === 'core'
+            ? '#2f4334'
+            : '#1c2922',
+        p.entityId === selected ? '#d8ecc9' : tint,
       );
       ctx.setLineDash([]);
       const xs = points.map((x) => x.x),
@@ -215,7 +215,7 @@ export function createRenderer(canvas, hooks = {}) {
         ctx.translate(x + 5, y);
         ctx.rotate(Math.PI / 2);
         ctx.fillStyle = tint;
-        ctx.font = "11px system-ui";
+        ctx.font = '11px system-ui';
         ctx.fillText(p.node.title.slice(0, 35), 0, 0);
         ctx.restore();
         continue;
@@ -229,13 +229,13 @@ export function createRenderer(canvas, hooks = {}) {
       ctx.font = `600 ${Math.max(8, 10 * scale)}px monospace`;
       ctx.fillStyle = tint;
       ctx.fillText(
-        (p.node.kind || "canvas").toUpperCase() +
-          (p.tier ? ` · ${p.tier}` : ""),
+        (p.node.kind || 'canvas').toUpperCase() +
+          (p.tier ? ` · ${p.tier}` : ''),
         x + 12 * scale,
         y + 19 * scale,
       );
       ctx.font = `600 ${Math.max(11, 14 * scale)}px system-ui`;
-      ctx.fillStyle = "#ecf1e8";
+      ctx.fillStyle = '#ecf1e8';
       const title = p.flowTitle || p.node.title;
       wrapText(
         title,
@@ -246,9 +246,9 @@ export function createRenderer(canvas, hooks = {}) {
         2,
       );
       ctx.font = `${Math.max(9, 10 * scale)}px system-ui`;
-      ctx.fillStyle = "#a7baaa";
+      ctx.fillStyle = '#a7baaa';
       ctx.fillText(
-        p.node.status || "unknown",
+        p.node.status || 'unknown',
         x + 12 * scale,
         y + rh - 15 * scale,
       );
@@ -256,8 +256,8 @@ export function createRenderer(canvas, hooks = {}) {
         ctx.font = `${Math.max(8, 9 * scale)}px monospace`;
         ctx.fillStyle = tint;
         ctx.fillText(
-          p.node.representations.join(" · ") +
-            (p.secondary ? "  ↳ 같은 ID" : ""),
+          p.node.representations.join(' · ') +
+            (p.secondary ? '  ↳ 같은 ID' : ''),
           x + 12 * scale,
           y + rh - 32 * scale,
         );
@@ -285,8 +285,8 @@ export function createRenderer(canvas, hooks = {}) {
     });
   }
   function wrapText(text, x, y, max, lineHeight, lines) {
-    const words = String(text).split("");
-    let row = "",
+    const words = String(text).split('');
+    let row = '',
       j = 0;
     for (const word of words) {
       if (ctx.measureText(row + word).width > max && row) {
@@ -327,7 +327,7 @@ export function createRenderer(canvas, hooks = {}) {
   const controller = new AbortController(),
     listen = (name, fn, opts = {}) =>
       canvas.addEventListener(name, fn, { ...opts, signal: controller.signal });
-  listen("pointerdown", (e) => {
+  listen('pointerdown', (e) => {
     if (e.button !== 0 && e.button !== 1 && e.button !== 2) return;
     canvas.focus();
     drag = {
@@ -339,7 +339,7 @@ export function createRenderer(canvas, hooks = {}) {
     };
     canvas.setPointerCapture(e.pointerId);
   });
-  listen("pointermove", (e) => {
+  listen('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x,
       dy = e.clientY - drag.y;
@@ -354,7 +354,7 @@ export function createRenderer(canvas, hooks = {}) {
     drag.y = e.clientY;
     dirty = true;
   });
-  listen("pointerup", (e) => {
+  listen('pointerup', (e) => {
     if (
       drag &&
       Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 5
@@ -373,10 +373,10 @@ export function createRenderer(canvas, hooks = {}) {
     }
     drag = null;
   });
-  listen("pointercancel", () => (drag = null));
-  listen("contextmenu", (e) => e.preventDefault());
+  listen('pointercancel', () => (drag = null));
+  listen('contextmenu', (e) => e.preventDefault());
   listen(
-    "wheel",
+    'wheel',
     (e) => {
       e.preventDefault();
       const r = canvas.getBoundingClientRect(),
@@ -388,14 +388,14 @@ export function createRenderer(canvas, hooks = {}) {
   );
   let space = false;
   function key(e) {
-    if (e.target.matches("input,textarea,select") || e.target.isContentEditable)
+    if (e.target.matches('input,textarea,select') || e.target.isContentEditable)
       return;
-    if (e.code === "Space") {
-      space = e.type === "keydown";
+    if (e.code === 'Space') {
+      space = e.type === 'keydown';
       e.preventDefault();
       return;
     }
-    if (e.type !== "keydown") return;
+    if (e.type !== 'keydown') return;
     const step = e.shiftKey ? 100 : 35;
     const v = {
       KeyW: [0, step],
@@ -413,25 +413,25 @@ export function createRenderer(canvas, hooks = {}) {
       camera.panY += v[1];
       dirty = true;
     }
-    if (e.code === "KeyR") fit();
-    if (e.code === "KeyH") {
+    if (e.code === 'KeyR') fit();
+    if (e.code === 'KeyH') {
       settings.grab = true;
-      hooks.mode?.("grab");
+      hooks.mode?.('grab');
     }
-    if (e.code === "KeyV") {
+    if (e.code === 'KeyV') {
       settings.grab = false;
-      hooks.mode?.("rotate");
+      hooks.mode?.('rotate');
     }
-    if (e.code === "Digit3" || e.code === "Numpad3") {
+    if (e.code === 'Digit3' || e.code === 'Numpad3') {
       e.preventDefault();
-      hooks.view?.("journey");
+      hooks.view?.('journey');
       hooks.key?.(e.code);
     }
-    if (e.code === "Digit1" || e.code === "Numpad1") hooks.view?.("pipeline");
-    if (e.code === "Digit2" || e.code === "Numpad2") hooks.view?.("hierarchy");
+    if (e.code === 'Digit1' || e.code === 'Numpad1') hooks.view?.('pipeline');
+    if (e.code === 'Digit2' || e.code === 'Numpad2') hooks.view?.('hierarchy');
   }
-  canvas.addEventListener("keydown", key, { signal: controller.signal });
-  canvas.addEventListener("keyup", key, { signal: controller.signal });
+  canvas.addEventListener('keydown', key, { signal: controller.signal });
+  canvas.addEventListener('keyup', key, { signal: controller.signal });
   function zoom(value, x = 0, y = 0) {
     const next = Math.max(0.001, Math.min(512, value)),
       ratio = next / camera.zoom;
